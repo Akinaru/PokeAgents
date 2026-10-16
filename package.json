@@ -55,7 +55,8 @@
     "dist/uninstall.js",
     "dist/assets/",
     "dist/webview/",
-    "icon.png"
+    "icon.png",
+    "media/pokeball.svg"
   ],
   "contributes": {
     "commands": [
@@ -73,7 +74,7 @@
         {
           "id": "pokeagents-panel",
           "title": "PokeAgents",
-          "icon": "$(window)"
+          "icon": "media/pokeball.svg"
         }
       ]
     },
