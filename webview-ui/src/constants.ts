@@ -11,12 +11,6 @@ export const MAX_ROWS = 64;
 export const WALK_SPEED_PX_PER_SEC = 48;
 export const WALK_FRAME_DURATION_SEC = 0.15;
 export const TYPE_FRAME_DURATION_SEC = 0.3;
-export const WANDER_PAUSE_MIN_SEC = 2.0;
-export const WANDER_PAUSE_MAX_SEC = 20.0;
-export const WANDER_MOVES_BEFORE_REST_MIN = 3;
-export const WANDER_MOVES_BEFORE_REST_MAX = 6;
-export const SEAT_REST_MIN_SEC = 120.0;
-export const SEAT_REST_MAX_SEC = 240.0;
 
 // ── Matrix Effect ────────────────────────────────────────────
 export const MATRIX_EFFECT_DURATION_SEC = 0.3;
@@ -81,6 +75,8 @@ export const WALL_COLOR = '#3A3A5C';
 // ── Camera ───────────────────────────────────────────────────
 export const CAMERA_FOLLOW_LERP = 0.1;
 export const CAMERA_FOLLOW_SNAP_THRESHOLD = 0.5;
+/** Per-frame easing of the tilted view back inside the map after a drag. */
+export const PAN_SPRING_LERP = 0.2;
 
 // ── Zoom ─────────────────────────────────────────────────────
 export const ZOOM_MIN = 1;
@@ -198,8 +194,6 @@ export const WHATS_NEW_FADE_MS = 1000;
 export const MAX_DELTA_TIME_SEC = 0.1;
 export const WAITING_BUBBLE_DURATION_SEC = 2.0;
 export const DISMISS_BUBBLE_FAST_FADE_SEC = 0.3;
-export const INACTIVE_SEAT_TIMER_MIN_SEC = 3.0;
-export const INACTIVE_SEAT_TIMER_RANGE_SEC = 2.0;
 /** Default/fallback palette count (bundled characters). Actual count comes from getLoadedCharacterCount(). */
 export const PALETTE_COUNT = 6;
 export const AUTO_ON_FACING_DEPTH = 3;
@@ -354,3 +348,12 @@ export const NAMETAG_BORDER_COLOR = 'rgba(255, 255, 255, 0.25)';
 export const TILT_PITCH_DEG = 52;
 /** Camera distance from the map center, in world px. Smaller = stronger perspective. */
 export const TILT_DISTANCE_WORLD = 480;
+
+// ── Sleep "Zzz" (resting agents) ─────────────────────────────
+export const SLEEP_Z_COUNT = 3;
+/** Seconds for one "Z" to rise and fade. */
+export const SLEEP_Z_CYCLE_SEC = 2.4;
+export const SLEEP_Z_RISE_PX = 14;
+export const SLEEP_Z_DRIFT_X_PX = 6;
+export const SLEEP_Z_COLOR = '#FFFFFF';
+export const SLEEP_Z_OUTLINE_COLOR = '#3A4A78';

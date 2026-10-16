@@ -168,10 +168,9 @@ const pacing = new WeakMap<Character, Pacing>();
 const randomIdleDelay = (): number =>
   POKEMON_IDLE_MIN_SEC + Math.random() * (POKEMON_IDLE_MAX_SEC - POKEMON_IDLE_MIN_SEC);
 
-function isAsleep(ch: Character): boolean {
-  // Resting on its spot between turns, or idle while waiting for the user.
-  if (ch.state === CharacterState.TYPE) return !ch.isActive;
-  return ch.bubbleType === 'waiting' && ch.waitingAwaitingInput === true;
+/** A resting agent's Pokémon sleeps wherever it settled (it still walks to its spot). */
+export function isPokemonAsleep(ch: Character): boolean {
+  return !ch.isActive && ch.state !== CharacterState.WALK;
 }
 
 function pokemonFrame(
@@ -183,7 +182,7 @@ function pokemonFrame(
     Math.floor(timeSec * POKEMON_TICKS_PER_SEC) % sheet.totalTicks;
   if (ch.state === CharacterState.WALK)
     return sheetFrame(anims.Walk, ch.dir, loopTicks(anims.Walk));
-  if (isAsleep(ch)) return sheetFrame(anims.Sleep, ch.dir, loopTicks(anims.Sleep));
+  if (isPokemonAsleep(ch)) return sheetFrame(anims.Sleep, ch.dir, loopTicks(anims.Sleep));
 
   let p = pacing.get(ch);
   if (!p) {

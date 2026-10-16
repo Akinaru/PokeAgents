@@ -59,3 +59,22 @@ test('billboardPoint maps the anchor to itself and scales offsets by distance', 
   const up = camera.billboardPoint(p.x, p.y - 10 * ZOOM * p.scale, anchor.x, anchor.y);
   close(up.y, anchor.y - 10);
 });
+
+test('containedPan keeps the tilted map covering the canvas', async () => {
+  const { containedPan } = await import('../src/office/projection.js');
+  const W = 800;
+  const H = 500;
+  // Far off to the side: pulled back so the map covers the canvas
+  const pan = containedPan(W, H, COLS, ROWS, 4, { x: 1e6, y: -1e6 })!;
+  assert.ok(pan, 'a 24×18 map at zoom 4 covers 800×500');
+  const { mapOffset } = await import('../src/office/projection.js');
+  const { offsetX, offsetY } = mapOffset(W, H, COLS, ROWS, 4, pan.x, pan.y);
+  const cam = tiltCamera(offsetX, offsetY, COLS, ROWS, 4);
+  const top = cam.unproject(0, 0)!;
+  assert.ok(cam.project(0, 0).y <= 0.5 && cam.project(0, ROWS * TILE_SIZE).y >= H - 0.5);
+  assert.ok(cam.project(0, top.y).x <= 0.5 && cam.project(COLS * TILE_SIZE, top.y).x >= W - 0.5);
+  // A pan already inside the allowed range is left alone
+  assert.deepEqual(containedPan(W, H, COLS, ROWS, 4, { x: 0, y: 0 }), { x: 0, y: 0 });
+  // Too far zoomed out, the map cannot cover the canvas at all
+  assert.equal(containedPan(W, H, COLS, ROWS, 1, { x: 0, y: 0 }), null);
+});

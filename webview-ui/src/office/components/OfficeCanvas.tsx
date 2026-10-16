@@ -4,6 +4,7 @@ import {
   CAMERA_FOLLOW_LERP,
   CAMERA_FOLLOW_SNAP_THRESHOLD,
   PAN_MARGIN_FRACTION,
+  PAN_SPRING_LERP,
   ZOOM_MAX,
   ZOOM_MIN,
   ZOOM_SCROLL_THRESHOLD,
@@ -11,6 +12,7 @@ import {
 import { unlockAudio } from '../../notificationSound.js';
 import { transport } from '../../transport/index.js';
 import type { BillboardHit, TiltCamera } from '../camera.js';
+import { tiltCamera } from '../camera.js';
 import { getColorizedSprite } from '../colorize.js';
 import { canPlaceFurniture, getWallPlacementRow } from '../editor/editorActions.js';
 import type { EditorState } from '../editor/editorState.js';
@@ -24,6 +26,7 @@ import type {
 } from '../engine/renderer.js';
 import { renderFrame } from '../engine/renderer.js';
 import { getCatalogEntry, isRotatable } from '../layout/furnitureCatalog.js';
+import { containedPan, mapOffset } from '../projection.js';
 import { EditTool, TILE_SIZE } from '../types.js';
 import { computeNormalModeCursor } from './officeCanvasCursor.js';
 
@@ -245,12 +248,26 @@ export function OfficeCanvas({
             ? officeState.characters.get(officeState.cameraFollowId)
             : undefined;
         const cameraFocus = followCh ?? officeState.greeterCameraTarget;
+        const followLayout = officeState.getLayout();
         if (cameraFocus) {
-          const layout = officeState.getLayout();
+          const layout = followLayout;
           const mapW = layout.cols * TILE_SIZE * zoom;
           const mapH = layout.rows * TILE_SIZE * zoom;
-          const targetX = mapW / 2 - cameraFocus.x * zoom;
-          const targetY = mapH / 2 - cameraFocus.y * zoom;
+          let targetX = mapW / 2 - cameraFocus.x * zoom;
+          let targetY = mapH / 2 - cameraFocus.y * zoom;
+          if (!isEditMode) {
+            // Tilted: the pan that puts the focus's projection at the canvas center
+            const base = mapOffset(w, h, layout.cols, layout.rows, zoom, 0, 0);
+            const p = tiltCamera(
+              base.offsetX,
+              base.offsetY,
+              layout.cols,
+              layout.rows,
+              zoom,
+            ).project(cameraFocus.x, cameraFocus.y);
+            targetX = w / 2 - p.x;
+            targetY = h / 2 - p.y;
+          }
           const dx = targetX - panRef.current.x;
           const dy = targetY - panRef.current.y;
           if (
@@ -263,6 +280,33 @@ export function OfficeCanvas({
               x: panRef.current.x + dx * CAMERA_FOLLOW_LERP,
               y: panRef.current.y + dy * CAMERA_FOLLOW_LERP,
             };
+          }
+        }
+
+        // Tilted view: never show past the map's edges. Out of a manual drag,
+        // the view eases back inside them; zoomed out too far, it zooms back in.
+        if (!isEditMode && !isPanningRef.current) {
+          const contained = containedPan(
+            w,
+            h,
+            followLayout.cols,
+            followLayout.rows,
+            zoom,
+            panRef.current,
+          );
+          if (!contained) {
+            if (zoom < ZOOM_MAX) onZoomChange(zoom + 1);
+          } else {
+            const dx = contained.x - panRef.current.x;
+            const dy = contained.y - panRef.current.y;
+            panRef.current =
+              Math.abs(dx) < CAMERA_FOLLOW_SNAP_THRESHOLD &&
+              Math.abs(dy) < CAMERA_FOLLOW_SNAP_THRESHOLD
+                ? contained
+                : {
+                    x: panRef.current.x + dx * PAN_SPRING_LERP,
+                    y: panRef.current.y + dy * PAN_SPRING_LERP,
+                  };
           }
         }
 
@@ -322,6 +366,7 @@ export function OfficeCanvas({
     panRef,
     showAreas,
     activeAreaLabel,
+    onZoomChange,
   ]);
 
   // Convert CSS mouse coords to world (sprite pixel) coords

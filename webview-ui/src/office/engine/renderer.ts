@@ -43,12 +43,18 @@ import {
   SELECTED_OUTLINE_ALPHA,
   SELECTION_DASH_PATTERN,
   SELECTION_HIGHLIGHT_COLOR,
+  SLEEP_Z_COLOR,
+  SLEEP_Z_COUNT,
+  SLEEP_Z_CYCLE_SEC,
+  SLEEP_Z_DRIFT_X_PX,
+  SLEEP_Z_OUTLINE_COLOR,
+  SLEEP_Z_RISE_PX,
   VOID_TILE_DASH_PATTERN,
   VOID_TILE_OUTLINE_COLOR,
 } from '../../constants.js';
 import type { PokemonEffectKind } from '../../pokemon/effects.js';
 import { pokemonEffect } from '../../pokemon/effects.js';
-import { getPokemonSprite } from '../../pokemon/sprites.js';
+import { getPokemonSprite, isPokemonAsleep } from '../../pokemon/sprites.js';
 import type { TiltCamera } from '../camera.js';
 import { tiltCamera } from '../camera.js';
 import { getColorizedFloorSprite, hasFloorSprites, WALL_COLOR } from '../floorTiles.js';
@@ -513,6 +519,14 @@ export function renderScene(
       },
     });
 
+    if (pokemonSprite && isPokemonAsleep(ch)) {
+      drawables.push({
+        zY: charZY + EFFECT_Z_SORT_OFFSET,
+        ...anchor,
+        draw: (c) => renderSleepZs(c, drawX + cached.width, drawY, zoom, timeSec + ch.id),
+      });
+    }
+
     const effect = pokemonEffect(ch, timeSec);
     if (effect) {
       drawables.push({
@@ -555,6 +569,45 @@ export function renderScene(
   for (const d of drawables) {
     drawBillboard(ctx, camera, d.anchorX, d.anchorY, offsetX, offsetY, zoom, d.draw);
   }
+}
+
+/** 5×5 pixel "Z" for the sleep bubble. */
+const SLEEP_Z_GLYPH = ['#####', '...#.', '..#..', '.#...', '#####'];
+
+/**
+ * Sleeping Pokémon: "Z"s float up from the top-right of the sprite, drifting
+ * right and fading, staggered so one is always rising.
+ */
+function renderSleepZs(
+  ctx: CanvasRenderingContext2D,
+  headX: number,
+  headY: number,
+  zoom: number,
+  timeSec: number,
+): void {
+  ctx.save();
+  for (let i = 0; i < SLEEP_Z_COUNT; i++) {
+    const t = (timeSec / SLEEP_Z_CYCLE_SEC + i / SLEEP_Z_COUNT) % 1;
+    const x = Math.round(headX - 4 * zoom + t * SLEEP_Z_DRIFT_X_PX * zoom);
+    const y = Math.round(headY + 4 * zoom - t * SLEEP_Z_RISE_PX * zoom);
+    ctx.globalAlpha = Math.min(1, (1 - t) * 2);
+    // Dark outline first (offset copies), then the white glyph
+    for (const [dx, dy, color] of [
+      [-1, 0, SLEEP_Z_OUTLINE_COLOR],
+      [1, 0, SLEEP_Z_OUTLINE_COLOR],
+      [0, -1, SLEEP_Z_OUTLINE_COLOR],
+      [0, 1, SLEEP_Z_OUTLINE_COLOR],
+      [0, 0, SLEEP_Z_COLOR],
+    ] as const) {
+      ctx.fillStyle = color;
+      SLEEP_Z_GLYPH.forEach((row, gy) => {
+        for (let gx = 0; gx < row.length; gx++) {
+          if (row[gx] === '#') ctx.fillRect(x + (gx + dx) * zoom, y + (gy + dy) * zoom, zoom, zoom);
+        }
+      });
+    }
+  }
+  ctx.restore();
 }
 
 /** Evolution: the sprite flickers white. Shiny: four sparkles orbit the sprite. */

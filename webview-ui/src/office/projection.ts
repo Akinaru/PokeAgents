@@ -86,3 +86,33 @@ export function overlayProjection(
     toWorldLength: (cssPx) => (cssPx * dpr) / zoom,
   };
 }
+
+/**
+ * The pan closest to `pan` for which the tilted map covers the whole canvas,
+ * so its empty surroundings never show; null when it cannot at this zoom.
+ * The tilted map is a trapezoid narrowest at its far (top) edge, so the
+ * width test uses the ground row seen at the top of the screen.
+ */
+export function containedPan(
+  canvasWidth: number,
+  canvasHeight: number,
+  cols: number,
+  rows: number,
+  zoom: number,
+  pan: { x: number; y: number },
+): { x: number; y: number } | null {
+  const { offsetX, offsetY } = mapOffset(canvasWidth, canvasHeight, cols, rows, zoom, 0, 0);
+  const camera = tiltCamera(offsetX, offsetY, cols, rows, zoom);
+  const mapW = cols * TILE_SIZE;
+  const minY = canvasHeight - camera.project(0, rows * TILE_SIZE).y;
+  const maxY = -camera.project(0, 0).y;
+  if (minY > maxY) return null;
+  const y = Math.max(minY, Math.min(maxY, pan.y));
+  // Ground row under the top of the screen once panned by y
+  const topRow = camera.unproject(0, -y);
+  if (!topRow) return null;
+  const minX = canvasWidth - camera.project(mapW, topRow.y).x;
+  const maxX = -camera.project(0, topRow.y).x;
+  if (minX > maxX) return null;
+  return { x: Math.max(minX, Math.min(maxX, pan.x)), y };
+}

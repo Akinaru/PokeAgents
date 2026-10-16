@@ -513,7 +513,7 @@ const furniture: FurnitureSpec[] = [
 // ── Default map: "Route 1" ──────────────────────────────────
 
 /** Bump to replace users' saved layouts with this map on their next load. */
-const ROUTE_LAYOUT_REVISION = 4;
+const ROUTE_LAYOUT_REVISION = 5;
 const BACKGROUNDS_DIR = path.join(__dirname, '..', 'webview-ui', 'src', 'assets', 'maps');
 const GRASS = 7;
 const PATH = 8;
@@ -555,8 +555,9 @@ function routeLayout(): Record<string, unknown> {
   };
 
   // Forest border, leaving the path open at both ends
+  const pathCol = COLS / 2;
   for (let c = 0; c < COLS; c += 2) {
-    if (c === 10 || c === 12) continue;
+    if (c === pathCol - 2 || c === pathCol) continue;
     place('TREE', c, 0);
     place('TREE', c, ROWS - 2);
   }
@@ -564,36 +565,52 @@ function routeLayout(): Record<string, unknown> {
     place('TREE', 0, r);
     place('TREE', COLS - 2, r);
   }
+  // Groves thickening the forest on both sides
+  for (const [c, r] of [
+    [2, 7],
+    [2, 10],
+    [4, 16],
+    [2, 15],
+    [36, 3],
+    [36, 6],
+    [34, 16],
+    [36, 9],
+    [30, 15],
+  ]) {
+    place('TREE', c, r);
+  }
 
   // Tall grass blades standing on every tile of each patch
   for (const [c0, r0, w, h] of ROUTE_SHAPES.tallGrass) {
     for (let r = r0; r < r0 + h; r++) for (let c = c0; c < c0 + w; c++) place('TALL_GRASS', c, r);
   }
 
-  // Spots where working Pokémon stand
+  // Spots where working Pokémon stand: the west meadow and the east clearing
   for (const [c, r] of [
-    [4, 4],
-    [6, 4],
-    [8, 4],
-    [15, 12],
-    [17, 12],
-    [19, 12],
-    [16, 14],
-    [19, 14],
+    [10, 4],
+    [12, 4],
+    [14, 4],
+    [11, 6],
+    [13, 6],
+    [24, 11],
+    [27, 11],
+    [30, 11],
   ]) {
     place('STUMP', c, r);
   }
-  place('ROUTE_SIGN', 14, 2);
+  place('ROUTE_SIGN', 22, 2);
   for (const [c, r] of [
-    [9, 6],
-    [2, 10],
-    [20, 9],
-    [2, 6],
+    [17, 6],
+    [8, 9],
+    [29, 8],
+    [23, 16],
+    [14, 11],
   ]) {
     place('BUSH', c, r);
   }
-  place('ROCK', 9, 14);
-  place('ROCK', 19, 2);
+  place('ROCK', 15, 15);
+  place('ROCK', 32, 2);
+  place('ROCK', 5, 11);
 
   return {
     version: 1,
