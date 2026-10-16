@@ -223,6 +223,8 @@ export interface Character {
   matrixEffectSeeds: number[];
   /** Name of the folder the agent works in (WorkspaceFolder.name, else cwd basename) */
   folderName?: string;
+  /** Server-assigned seed the agent's Pokémon is rolled from (sub-agents share their parent's). */
+  seed?: number;
   /** Headless agent: adopted from outside the office, so there is no terminal to
    *  focus. Rendered translucent. Teammates and sub-agents are never headless —
    *  clicking them reaches their lead's / parent's terminal. */

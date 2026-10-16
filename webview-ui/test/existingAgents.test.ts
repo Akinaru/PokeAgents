@@ -38,15 +38,19 @@ interface AddAgentCall {
 
 /** A fake office that records addAgent calls, mirroring how officeCanvasCursor
  *  tests inject closures instead of constructing a real OfficeState. */
-function fakeOffice(
-  existing: number[] = [],
-): ExistingAgentsOffice & { calls: AddAgentCall[]; headless: number[] } {
+function fakeOffice(existing: number[] = []): ExistingAgentsOffice & {
+  calls: AddAgentCall[];
+  headless: number[];
+  seeds: Map<number, number | undefined>;
+} {
   const ids = new Set(existing);
   const calls: AddAgentCall[] = [];
   const headless: number[] = [];
+  const seeds = new Map<number, number | undefined>();
   return {
     calls,
     headless,
+    seeds,
     characters: { has: (id: number) => ids.has(id) },
     addAgent: (id, palette, hueShift, seatId, skipSpawnEffect, folderName) => {
       ids.add(id);
@@ -54,6 +58,9 @@ function fakeOffice(
     },
     setHeadless: (id, isHeadless) => {
       if (isHeadless) headless.push(id);
+    },
+    setPokemonSeed: (id, seed) => {
+      seeds.set(id, seed);
     },
   };
 }
@@ -91,7 +98,7 @@ test('layout not ready: buffers restored agents for the later layoutLoaded flush
   const os = fakeOffice();
   const pending: PendingAgent[] = [];
   const meta: Record<number, ExistingAgentMeta> = {
-    5: { palette: 2, hueShift: 90, seatId: 'seat-a' },
+    5: { palette: 2, hueShift: 90, seatId: 'seat-a', seed: 7 },
   };
   const folderNames: Record<number, string> = { 5: 'alpha' };
 
@@ -100,7 +107,15 @@ test('layout not ready: buffers restored agents for the later layoutLoaded flush
   assert.equal(addedDirectly, false);
   assert.equal(os.calls.length, 0, 'no agent should be added before the layout is ready');
   assert.deepEqual(pending, [
-    { id: 5, palette: 2, hueShift: 90, seatId: 'seat-a', folderName: 'alpha', isHeadless: false },
+    {
+      id: 5,
+      palette: 2,
+      hueShift: 90,
+      seatId: 'seat-a',
+      folderName: 'alpha',
+      isHeadless: false,
+      seed: 7,
+    },
   ]);
 });
 
@@ -176,4 +191,20 @@ test('layout ready: agent with no metadata is still added with undefined fields'
       folderName: undefined,
     },
   ]);
+});
+
+// ── Pokémon seed ─────────────────────────────────────────────────
+
+test('layout ready: the Pokémon seed is attached to the restored character', () => {
+  const os = fakeOffice();
+  reconcileExistingAgents(os, [8], { 8: { seed: 12345 } }, {}, true, []);
+  assert.equal(os.seeds.get(8), 12345);
+});
+
+test('layout not ready: the Pokémon seed rides along on the buffered agent', () => {
+  const os = fakeOffice();
+  const pending: PendingAgent[] = [];
+  reconcileExistingAgents(os, [9], { 9: { seed: 42 } }, {}, false, pending);
+  assert.equal(os.seeds.size, 0);
+  assert.equal(pending[0].seed, 42);
 });

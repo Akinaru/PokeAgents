@@ -22,6 +22,8 @@ export interface AgentState {
   hadToolsInTurn: boolean;
   /** Name of the folder the agent works in (WorkspaceFolder.name, else cwd basename) */
   folderName?: string;
+  /** Pokémon roll seed, fixed on first use so a /clear keeps the same Pokémon. */
+  seed?: number;
   /** Timestamp of last JSONL data received (ms since epoch) */
   lastDataAt: number;
   /** Total JSONL lines processed for this agent */

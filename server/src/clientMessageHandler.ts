@@ -13,6 +13,11 @@ import {
 } from './configPersistence.js';
 import { HUE_SHIFT_MAX_DEG, PALETTE_COUNT } from './constants.js';
 import { readLayoutFromFile, writeLayoutToFile } from './layoutPersistence.js';
+import {
+  agentPokemonSeed,
+  isValidPokemonRequest,
+  pokemonSpritesMessage,
+} from './pokemonSprites.js';
 import type { ConsentEffects } from './providers/hook/consentExecutor.js';
 import { applyConsentChoice } from './providers/hook/consentExecutor.js';
 import { hooksConsentRequest } from './providers/hook/consentGate.js';
@@ -108,6 +113,13 @@ export function handleClientMessage(
     case 'requestDiagnostics':
       // Point-to-point reply to the requesting socket (NOT a broadcast).
       send({ type: 'agentDiagnostics', agents: buildAgentDiagnostics(store) });
+      break;
+
+    case 'requestPokemonSprites':
+      // Point-to-point: only the requesting client needs these sheets.
+      if (isValidPokemonRequest(msg.dex, msg.shiny)) {
+        void pokemonSpritesMessage(msg.dex, msg.shiny as boolean).then(send);
+      }
       break;
 
     case 'saveLayout':
@@ -482,7 +494,10 @@ function handleWebviewReady(send: WsSend, ctx: ClientMessageContext): void {
   const folderNames: Record<number, string> = {};
   const externalAgents: Record<number, boolean> = {};
   const persistedSeats = adapter?.loadSeats() ?? {};
-  const agentMeta: Record<number, { palette?: number; hueShift?: number; seatId?: string }> = {};
+  const agentMeta: Record<
+    number,
+    { palette?: number; hueShift?: number; seatId?: string; seed: number }
+  > = {};
   for (const [id, agent] of store) {
     agentIds.push(id);
     if (agent.folderName) {
@@ -496,6 +511,7 @@ function handleWebviewReady(send: WsSend, ctx: ClientMessageContext): void {
       palette: agent.palette,
       hueShift: agent.hueShift,
       seatId: persisted?.seatId,
+      seed: agentPokemonSeed(agent),
     };
   }
   send({

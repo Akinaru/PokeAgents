@@ -15,6 +15,7 @@ import {
 } from '../../server/src/fileWatcher.js';
 import { loadLayout } from '../../server/src/layoutPersistence.js';
 import { assignPaletteIfNeeded } from '../../server/src/paletteAssigner.js';
+import { agentPokemonSeed } from '../../server/src/pokemonSprites.js';
 import { CLAUDE_TERMINAL_NAME_PREFIX } from '../../server/src/providers/hook/claude/constants.js';
 import { claudeProvider } from '../../server/src/providers/index.js';
 import { cancelPermissionTimer, cancelWaitingTimer } from '../../server/src/timerManager.js';
@@ -527,13 +528,18 @@ export function sendExistingAgents(
   }
   agentIds.sort((a, b) => a - b);
 
-  // Include persisted palette/seatId from separate key
-  const agentMeta = adapter.loadSeats();
+  // Persisted palette/seatId from a separate key, plus each agent's Pokémon seed
+  const persistedSeats = adapter.loadSeats();
+  const agentMeta: Record<
+    number,
+    { palette?: number; hueShift?: number; seatId?: string; seed: number }
+  > = {};
 
   // Include folderName and isExternal per agent
   const folderNames: Record<number, string> = {};
   const externalAgents: Record<number, boolean> = {};
   for (const [id, agent] of agents) {
+    agentMeta[id] = { ...persistedSeats[String(id)], seed: agentPokemonSeed(agent) };
     if (agent.folderName) {
       folderNames[id] = agent.folderName;
     }

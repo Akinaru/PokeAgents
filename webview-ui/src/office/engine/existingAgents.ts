@@ -16,6 +16,7 @@ export interface ExistingAgentMeta {
   palette?: number;
   hueShift?: number;
   seatId?: string;
+  seed?: number;
 }
 
 /** An agent buffered until the layout (and its seats) has been built. */
@@ -26,6 +27,7 @@ export interface PendingAgent {
   seatId?: string;
   folderName?: string;
   isHeadless?: boolean;
+  seed?: number;
 }
 
 /** Minimal structural view of OfficeState this reconciler needs. */
@@ -40,6 +42,7 @@ export interface ExistingAgentsOffice {
     folderName?: string,
   ) => void;
   setHeadless: (id: number, headless: boolean) => void;
+  setPokemonSeed: (id: number, seed: number | undefined) => void;
 }
 
 /**
@@ -68,10 +71,12 @@ export function reconcileExistingAgents(
       seatId: m?.seatId,
       folderName: folderNames[id],
       isHeadless: headlessAgents[id] === true,
+      seed: m?.seed,
     };
     if (layoutReady) {
       if (!os.characters.has(p.id)) {
         os.addAgent(p.id, p.palette, p.hueShift, p.seatId, true, p.folderName);
+        os.setPokemonSeed(p.id, p.seed);
         if (p.isHeadless) os.setHeadless(p.id, true);
         addedDirectly = true;
       }

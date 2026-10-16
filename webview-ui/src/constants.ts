@@ -312,3 +312,13 @@ export const PET_THUMB_SCALE_MARGIN = 0.85;
 export const EMPTY_SPRITE_THUMBNAIL_BG = '#333';
 /** Maximum string length for a PlacedPet.id (defends against pathologically-long layout entries). */
 export const MAX_PET_ID_LENGTH = 128;
+
+// ── Pokémon ──────────────────────────────────────────────────
+/** Chance that a session's Pokémon is shiny (the games use 1/4096). */
+export const POKEMON_SHINY_RATE = 1 / 64;
+/** Context-window fill ratios at which an agent's Pokémon evolves (one entry per stage). */
+export const POKEMON_EVOLUTION_THRESHOLDS = [0.3, 0.6];
+/** PMD sprites center the body on the frame; the ground sits this many px below center. */
+export const POKEMON_GROUND_OFFSET_PX = 6;
+/** PMD animation durations are expressed in 60 Hz game ticks. */
+export const POKEMON_TICKS_PER_SEC = 60;

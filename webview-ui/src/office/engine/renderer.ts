@@ -44,6 +44,7 @@ import {
   VOID_TILE_DASH_PATTERN,
   VOID_TILE_OUTLINE_COLOR,
 } from '../../constants.js';
+import { getPokemonSprite } from '../../pokemon/sprites.js';
 import { getColorizedFloorSprite, hasFloorSprites, WALL_COLOR } from '../floorTiles.js';
 import { mapOffset } from '../projection.js';
 import {
@@ -388,12 +389,15 @@ export function renderScene(
   }
 
   // Characters
+  const timeSec = performance.now() / 1000;
   for (const ch of characters) {
-    const sprites = getCharacterSprites(ch.palette, ch.hueShift);
-    const spriteData = getCharacterSprite(ch, sprites);
+    const pokemonSprite = getPokemonSprite(ch, timeSec);
+    const spriteData =
+      pokemonSprite ?? getCharacterSprite(ch, getCharacterSprites(ch.palette, ch.hueShift));
     const cached = getCachedSprite(spriteData, zoom);
-    // Sitting offset: shift character down when seated so they visually sit in the chair
-    const sittingOffset = ch.state === CharacterState.TYPE ? CHARACTER_SITTING_OFFSET_PX : 0;
+    // Sitting offset: shift a human down when seated so they visually sit in the chair
+    const sittingOffset =
+      !pokemonSprite && ch.state === CharacterState.TYPE ? CHARACTER_SITTING_OFFSET_PX : 0;
     // Anchor at bottom-center of character — round to integer device pixels
     const drawX = Math.round(offsetX + ch.x * zoom - cached.width / 2);
     const drawY = Math.round(offsetY + (ch.y + sittingOffset) * zoom - cached.height);

@@ -97,6 +97,15 @@ export const LAYOUT_FILE_POLL_INTERVAL_MS = 2000;
 export const LAYOUT_REVISION_KEY = 'layoutRevision';
 export const CONFIG_FILE_NAME = 'config.json';
 
+// ── Pokémon Sprites ─────────────────────────────────────────
+export const POKEMON_SPRITE_BASE_URL =
+  'https://raw.githubusercontent.com/PMDCollab/SpriteCollab/master/sprite';
+/** Subdirectory of ~/.aagent holding downloaded sprite sheets. */
+export const POKEMON_CACHE_DIR_NAME = 'pokemon';
+/** Species (normal and shiny counted separately) kept on disk; ~30 KB each. */
+export const POKEMON_CACHE_MAX_ENTRIES = 128;
+export const POKEMON_FETCH_TIMEOUT_MS = 15_000;
+
 // ── Avatar Customization ────────────────────────────────────
 /** Number of pre-colored bundled character palettes (char_0.png–char_5.png).
  *  Mirrors `PALETTE_COUNT` in webview-ui/src/constants.ts; kept separate

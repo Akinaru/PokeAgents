@@ -106,6 +106,7 @@ components:
         - $ref: '#/components/schemas/FurnitureAssetsLoaded'
         - $ref: '#/components/schemas/CharacterSpritesLoaded'
         - $ref: '#/components/schemas/PetSpritesLoaded'
+        - $ref: '#/components/schemas/PokemonSpritesLoaded'
         - $ref: '#/components/schemas/FloorTilesLoaded'
         - $ref: '#/components/schemas/WallTilesLoaded'
         - $ref: '#/components/schemas/CarpetTilesLoaded'
@@ -144,6 +145,7 @@ components:
         - $ref: '#/components/schemas/SaveAreaMappings'
         - $ref: '#/components/schemas/SetShowAreas'
         - $ref: '#/components/schemas/RequestDiagnostics'
+        - $ref: '#/components/schemas/RequestPokemonSprites'
       discriminator: type
 
     # ── Server message variants ────────────────────────────────────
@@ -190,6 +192,9 @@ components:
         hueShift:
           type: integer
           description: Server-assigned hue shift in degrees (0-360).
+        seed:
+          type: integer
+          description: Stable per-session seed the client rolls the agent's Pokémon from.
 
     AgentClosed:
       description: An agent has been removed from the office.
@@ -498,6 +503,48 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/CharacterSpriteSet'
+
+    PokemonSpritesLoaded:
+      description: |
+        Reply to `requestPokemonSprites`: one species' overworld sheets. `anims` is
+        empty and `error` set when the download failed.
+      type: object
+      additionalProperties: false
+      required: [type, dex, shiny, anims]
+      properties:
+        type:
+          const: pokemonSpritesLoaded
+        dex:
+          type: integer
+        shiny:
+          type: boolean
+        anims:
+          type: array
+          items:
+            $ref: '#/components/schemas/PokemonAnimSheet'
+        error:
+          type: string
+
+    PokemonAnimSheet:
+      description: One animation sheet, with a row per direction and a column per frame.
+      type: object
+      additionalProperties: false
+      required: [name, frameWidth, frameHeight, durations, png]
+      properties:
+        name:
+          type: string
+        frameWidth:
+          type: integer
+        frameHeight:
+          type: integer
+        durations:
+          type: array
+          description: Per-frame durations in 60 Hz ticks.
+          items:
+            type: integer
+        png:
+          type: string
+          description: Base64-encoded PNG.
 
     PetSpritesLoaded:
       description: Pet sprite frame sets and display names, sent once after webviewReady (between characterSpritesLoaded and floorTilesLoaded).
@@ -859,6 +906,19 @@ components:
           type: object
           description: Opaque layout object; format owned by the rendering layer.
 
+    RequestPokemonSprites:
+      description: Ask for one species' overworld sprite sheets (answered by `pokemonSpritesLoaded`).
+      type: object
+      additionalProperties: false
+      required: [type, dex, shiny]
+      properties:
+        type:
+          const: requestPokemonSprites
+        dex:
+          type: integer
+        shiny:
+          type: boolean
+
     SetSoundEnabled:
       type: object
       additionalProperties: false
@@ -1080,6 +1140,8 @@ components:
           type: integer
         seatId:
           type: string
+        seed:
+          type: integer
 
     SeatAssignment:
       description: |

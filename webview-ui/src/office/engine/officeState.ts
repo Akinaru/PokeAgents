@@ -686,6 +686,12 @@ export class OfficeState {
     return true;
   }
 
+  /** Attach the server's Pokémon seed to an agent's character. */
+  setPokemonSeed(id: number, seed: number | undefined): void {
+    const ch = this.characters.get(id);
+    if (ch) ch.seed = seed;
+  }
+
   /** Create a sub-agent character with the parent's palette. Returns the sub-agent ID. */
   addSubagent(parentAgentId: number, parentToolId: string): number {
     const key = `${parentAgentId}:${parentToolId}`;
@@ -711,6 +717,7 @@ export class OfficeState {
     ch.tileRow = spawn.row;
     // Face the same direction as the parent agent
     if (parentCh) ch.dir = parentCh.dir;
+    ch.seed = parentCh?.seed;
     ch.isSubagent = true;
     ch.parentAgentId = parentAgentId;
     startMatrixEffect(ch, 'spawn');

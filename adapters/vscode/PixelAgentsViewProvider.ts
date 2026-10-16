@@ -42,6 +42,11 @@ import {
   writeLayoutToFile,
 } from '../../server/src/layoutPersistence.js';
 import { PathSet } from '../../server/src/pathKey.js';
+import {
+  agentPokemonSeed,
+  isValidPokemonRequest,
+  pokemonSpritesMessage,
+} from '../../server/src/pokemonSprites.js';
 import type { ConsentEffects } from '../../server/src/providers/hook/consentExecutor.js';
 import { applyConsentChoice } from '../../server/src/providers/hook/consentExecutor.js';
 import { hooksConsentRequest } from '../../server/src/providers/hook/consentGate.js';
@@ -133,6 +138,7 @@ export class PixelAgentsViewProvider implements vscode.WebviewViewProvider {
         hooksOnly: agent.hooksOnly || undefined,
         palette: agent.palette,
         hueShift: agent.hueShift,
+        seed: agentPokemonSeed(agent),
       });
     });
     this.store.on('agentRemoved', (id) => {
@@ -831,6 +837,12 @@ export class PixelAgentsViewProvider implements vscode.WebviewViewProvider {
           type: 'agentDiagnostics',
           agents: buildAgentDiagnostics(this.store),
         });
+      } else if (message.type === 'requestPokemonSprites') {
+        if (isValidPokemonRequest(message.dex, message.shiny)) {
+          void pokemonSpritesMessage(message.dex, message.shiny as boolean).then((reply) =>
+            this.webview?.postMessage(reply),
+          );
+        }
       } else if (message.type === 'openSessionsFolder') {
         const projectDir = getProjectDirPath();
         if (projectDir && fs.existsSync(projectDir)) {

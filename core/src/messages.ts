@@ -29,6 +29,7 @@ export type ServerMessage =
   | FurnitureAssetsLoaded
   | CharacterSpritesLoaded
   | PetSpritesLoaded
+  | PokemonSpritesLoaded
   | FloorTilesLoaded
   | WallTilesLoaded
   | CarpetTilesLoaded
@@ -62,7 +63,8 @@ export type ClientMessage =
   | RemoveExternalAssetDirectory
   | SaveAreaMappings
   | SetShowAreas
-  | RequestDiagnostics;
+  | RequestDiagnostics
+  | RequestPokemonSprites;
 
 export interface ProviderCapabilities {
   type: 'providerCapabilities';
@@ -77,6 +79,7 @@ export interface AgentCreated {
   isExternal?: boolean;
   palette?: number;
   hueShift?: number;
+  seed?: number;
 }
 
 export interface AgentClosed {
@@ -101,6 +104,7 @@ export interface AgentSeatMeta {
   palette?: number;
   hueShift?: number;
   seatId?: string;
+  seed?: number;
 }
 
 export interface AgentStatus {
@@ -246,6 +250,22 @@ export interface PetSpriteFrameSet {
   walkUp: string[][][];
   idleUp: string[][][];
   walkRight: string[][][];
+}
+
+export interface PokemonSpritesLoaded {
+  type: 'pokemonSpritesLoaded';
+  dex: number;
+  shiny: boolean;
+  anims: PokemonAnimSheet[];
+  error?: string;
+}
+
+export interface PokemonAnimSheet {
+  name: string;
+  frameWidth: number;
+  frameHeight: number;
+  durations: number[];
+  png: string;
 }
 
 export interface FloorTilesLoaded {
@@ -428,4 +448,10 @@ export interface SetShowAreas {
 
 export interface RequestDiagnostics {
   type: 'requestDiagnostics';
+}
+
+export interface RequestPokemonSprites {
+  type: 'requestPokemonSprites';
+  dex: number;
+  shiny: boolean;
 }

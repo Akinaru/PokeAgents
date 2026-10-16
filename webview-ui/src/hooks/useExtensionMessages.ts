@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import type { HooksConsentRequest } from '../../../core/src/messages.js';
+import type { HooksConsentRequest, PokemonSpritesLoaded } from '../../../core/src/messages.js';
 import { playDoneSound, playPermissionSound, setSoundEnabled } from '../notificationSound.js';
 import type { ExistingAgentMeta, PendingAgent } from '../office/engine/existingAgents.js';
 import { reconcileExistingAgents } from '../office/engine/existingAgents.js';
@@ -19,6 +19,7 @@ import {
 } from '../office/toolUtils.js';
 import type { OfficeLayout, ToolActivity } from '../office/types.js';
 import { setWallSprites } from '../office/wallTiles.js';
+import { onPokemonSpritesLoaded } from '../pokemon/sprites.js';
 import { isBrowserRuntime, isE2E } from '../runtime.js';
 import { transport } from '../transport/index.js';
 
@@ -233,6 +234,7 @@ export function useExtensionMessages(
         // Add buffered agents now that layout (and seats) are correct
         for (const p of pendingAgents) {
           os.addAgent(p.id, p.palette, p.hueShift, p.seatId, true, p.folderName);
+          os.setPokemonSeed(p.id, p.seed);
           if (p.isHeadless) os.setHeadless(p.id, true);
         }
         pendingAgents = [];
@@ -251,6 +253,7 @@ export function useExtensionMessages(
         const teammateName = msg.teammateName as string | undefined;
         const teammateParentId = msg.parentAgentId as number | undefined;
         const teamName = msg.teamName as string | undefined;
+        const seed = msg.seed as number | undefined;
         setAgents((prev) => (prev.includes(id) ? prev : [...prev, id]));
         // Don't auto-select teammates (keep focus on lead)
         if (!isTeammate) {
@@ -272,6 +275,7 @@ export function useExtensionMessages(
             parentCh?.folderName,
             teammateParentId,
           );
+          os.setPokemonSeed(id, seed);
           noteFolderName(parentCh?.folderName);
           // Set team metadata on the character
           const ch = os.characters.get(id);
@@ -284,6 +288,7 @@ export function useExtensionMessages(
           const palette = msg.palette as number | undefined;
           const hueShift = msg.hueShift as number | undefined;
           os.addAgent(id, palette, hueShift, undefined, undefined, folderName);
+          os.setPokemonSeed(id, seed);
           noteFolderName(folderName);
           if (isHeadlessAgent(msg.isExternal as boolean | undefined)) {
             os.setHeadless(id, true);
@@ -608,6 +613,8 @@ export function useExtensionMessages(
         }>;
         console.log(`[Webview] Received ${characters.length} pre-colored character sprites`);
         setCharacterTemplates(characters);
+      } else if (msg.type === 'pokemonSpritesLoaded') {
+        void onPokemonSpritesLoaded(msg as unknown as PokemonSpritesLoaded);
       } else if (msg.type === 'petSpritesLoaded') {
         const pets = msg.pets;
         if (!Array.isArray(pets)) {
