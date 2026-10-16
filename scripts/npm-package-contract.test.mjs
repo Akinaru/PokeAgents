@@ -106,7 +106,7 @@ test('publishes only absent versions and treats integrity safely', () => {
 
 test('rejects a tarball changed after its metadata was created', () => {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pixel-agents-integrity-test-'));
-  const tarballPath = path.join(tmpDir, 'pixel-agents.tgz');
+  const tarballPath = path.join(tmpDir, 'aagent.tgz');
   const verifiedIntegrity =
     'sha512-RkN76vtkA1+8p/GSGfbyKAGc1SvEWGcyy0e6CVFdcQKBmX1sAD93WjE7XaXvLvWCO8Q8zHEugymaUbvwb3dBXg==';
   try {

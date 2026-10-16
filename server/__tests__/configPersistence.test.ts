@@ -102,22 +102,19 @@ describe('configPersistence: areas', () => {
       expect(getHooksEnabled('claude')).toBe(true);
       writeConfig(readConfig()); // full config on disk...
       const raw = JSON.parse(
-        fs.readFileSync(path.join(tempHome, '.pixel-agents', 'config.json'), 'utf-8'),
+        fs.readFileSync(path.join(tempHome, '.aagent', 'config.json'), 'utf-8'),
       );
       delete raw.hooksConsent; // ...from an older shape
       delete raw.hooksEnabled;
-      fs.writeFileSync(
-        path.join(tempHome, '.pixel-agents', 'config.json'),
-        JSON.stringify(raw, null, 2),
-      );
+      fs.writeFileSync(path.join(tempHome, '.aagent', 'config.json'), JSON.stringify(raw, null, 2));
       expect(getHooksConsent('claude')).toBe('unanswered');
       expect(getHooksEnabled('claude')).toBe(true);
     });
 
     it('drops junk values from hand-edited maps instead of crashing or trusting them', () => {
-      fs.mkdirSync(path.join(tempHome, '.pixel-agents'), { recursive: true });
+      fs.mkdirSync(path.join(tempHome, '.aagent'), { recursive: true });
       fs.writeFileSync(
-        path.join(tempHome, '.pixel-agents', 'config.json'),
+        path.join(tempHome, '.aagent', 'config.json'),
         JSON.stringify({
           hooksConsent: { claude: 'GRANTED', other: 'declined', junk: 42 },
           hooksEnabled: { claude: 'yes', other: false },
@@ -150,7 +147,7 @@ describe('configPersistence: areas', () => {
       // Both keys are genuinely gone — "never answered" and "answered and
       // reverted" must be indistinguishable on disk.
       const raw = JSON.parse(
-        fs.readFileSync(path.join(tempHome, '.pixel-agents', 'config.json'), 'utf-8'),
+        fs.readFileSync(path.join(tempHome, '.aagent', 'config.json'), 'utf-8'),
       );
       expect('claude' in (raw.hooksConsent ?? {})).toBe(false);
       expect('claude' in (raw.hooksEnabled ?? {})).toBe(false);
@@ -168,7 +165,7 @@ describe('configPersistence: areas', () => {
       expect(getHooksConsent('claude')).toBe('granted');
       expect(getHooksEnabled('claude')).toBe(true);
       const raw = JSON.parse(
-        fs.readFileSync(path.join(tempHome, '.pixel-agents', 'config.json'), 'utf-8'),
+        fs.readFileSync(path.join(tempHome, '.aagent', 'config.json'), 'utf-8'),
       );
       expect('claude' in (raw.hooksEnabled ?? {})).toBe(false);
     });
@@ -190,7 +187,7 @@ describe('configPersistence: areas', () => {
       // The key is genuinely gone, not written back as true: "never answered"
       // and "answered and reverted" must be indistinguishable on disk.
       const raw = JSON.parse(
-        fs.readFileSync(path.join(tempHome, '.pixel-agents', 'config.json'), 'utf-8'),
+        fs.readFileSync(path.join(tempHome, '.aagent', 'config.json'), 'utf-8'),
       );
       expect('claude' in (raw.hooksEnabled ?? {})).toBe(false);
     });
@@ -244,7 +241,7 @@ describe('configPersistence: areas', () => {
     });
 
     it('coerces a hand-edited config.json with malformed areaMappings into defaults', () => {
-      const configDir = path.join(tempHome, '.pixel-agents');
+      const configDir = path.join(tempHome, '.aagent');
       fs.mkdirSync(configDir, { recursive: true });
       fs.writeFileSync(
         path.join(configDir, 'config.json'),

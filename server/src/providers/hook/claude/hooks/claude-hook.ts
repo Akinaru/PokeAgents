@@ -51,7 +51,7 @@ function isProcessAlive(pid: number): boolean {
 }
 
 /**
- * Enumerate every live registry entry under ~/.pixel-agents/servers/, so the
+ * Enumerate every live registry entry under ~/.aagent/servers/, so the
  * event can fan out to each running server (VS Code embedded + a standalone
  * `npx pixel-agents`, or several of either, all at once). Entries whose owning
  * PID is no longer alive are skipped (the owning server prunes its own stale

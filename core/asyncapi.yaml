@@ -848,7 +848,7 @@ components:
             $ref: '#/components/schemas/SeatAssignment'
 
     SaveLayout:
-      description: Save the office layout to ~/.pixel-agents/layout.json.
+      description: Save the office layout to ~/.aagent/layout.json.
       type: object
       additionalProperties: false
       required: [type, layout]

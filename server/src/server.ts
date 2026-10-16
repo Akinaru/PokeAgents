@@ -27,7 +27,7 @@ export type { ServerConfig } from './serverConfig.js';
 type HookEventCallback = (providerId: string, event: Record<string, unknown>) => void;
 
 /**
- * Pixel Agents server: receives hook events, broadcasts state via WebSocket,
+ * aAgent server: receives hook events, broadcasts state via WebSocket,
  * and optionally serves the SPA in standalone mode.
  *
  * Routes (via Fastify in httpServer.ts):
@@ -35,8 +35,8 @@ type HookEventCallback = (providerId: string, event: Record<string, unknown>) =>
  * - `GET /api/health` -- health check (no auth)
  * - `GET /ws` -- WebSocket for real-time agent state (auth required)
  *
- * Discovery: writes `~/.pixel-agents/server.json` (legacy single-target pointer)
- * and `~/.pixel-agents/servers/<pid>-<port>.json` (multi-server registry entry)
+ * Discovery: writes `~/.aagent/server.json` (legacy single-target pointer)
+ * and `~/.aagent/servers/<pid>-<port>.json` (multi-server registry entry)
  * with port, PID, auth token, and capability flags.
  * Multi-window / multi-surface: a second instance detects running servers via
  * the registry and reuses one only when it offers the same capability
@@ -85,7 +85,7 @@ export class PixelAgentsServer {
       this.config = candidate;
       this.ownsServer = false;
       console.log(
-        `[Pixel Agents] Reusing existing ${wantsSpa ? 'standalone' : 'embedded'} server on port ${candidate.port} (PID ${candidate.pid})`,
+        `[aAgent] Reusing existing ${wantsSpa ? 'standalone' : 'embedded'} server on port ${candidate.port} (PID ${candidate.pid})`,
       );
       return candidate;
     }
@@ -127,7 +127,7 @@ export class PixelAgentsServer {
     // entry (new hook scripts fan out to every entry here).
     this.writeServerJson(this.config);
     this.writeRegistryEntry(this.config);
-    console.log(`[Pixel Agents] Server: listening on 127.0.0.1:${port}`);
+    console.log(`[aAgent] Server: listening on 127.0.0.1:${port}`);
 
     return this.config;
   }
@@ -151,7 +151,7 @@ export class PixelAgentsServer {
     return this.config;
   }
 
-  /** Returns the absolute path to ~/.pixel-agents/server.json. */
+  /** Returns the absolute path to ~/.aagent/server.json. */
   private getServerJsonPath(): string {
     return path.join(os.homedir(), SERVER_JSON_DIR, SERVER_JSON_NAME);
   }
@@ -168,7 +168,7 @@ export class PixelAgentsServer {
       fs.writeFileSync(tmpPath, JSON.stringify(config, null, 2), { mode: 0o600 });
       fs.renameSync(tmpPath, filePath);
     } catch (e) {
-      console.error(`[Pixel Agents] Failed to write server.json: ${e}`);
+      console.error(`[aAgent] Failed to write server.json: ${e}`);
     }
   }
 
@@ -198,7 +198,7 @@ export class PixelAgentsServer {
     }
   }
 
-  /** Returns the absolute path to ~/.pixel-agents/servers/. */
+  /** Returns the absolute path to ~/.aagent/servers/. */
   private getRegistryDir(): string {
     return path.join(os.homedir(), SERVER_JSON_DIR, SERVERS_DIR);
   }
@@ -263,7 +263,7 @@ export class PixelAgentsServer {
       fs.writeFileSync(tmpPath, JSON.stringify(config, null, 2), { mode: 0o600 });
       fs.renameSync(tmpPath, filePath);
     } catch (e) {
-      console.error(`[Pixel Agents] Failed to write registry entry: ${e}`);
+      console.error(`[aAgent] Failed to write registry entry: ${e}`);
     }
   }
 

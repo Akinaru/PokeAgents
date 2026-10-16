@@ -15,7 +15,7 @@ export interface AdapterSettings {
   areaMappings: Record<string, string[]>;
 }
 
-/** All keys in AdapterSettings. Used by adapters to map `pixel-agents.foo` → `foo`.
+/** All keys in AdapterSettings. Used by adapters to map `aagent.foo` → `foo`.
  *  The hooks preference is NOT here: it is per-provider and machine-global
  *  (the hooks it governs live in one home-directory file per provider), so it
  *  lives beside `hooksConsent` at the config top level, not per namespace. */
@@ -172,7 +172,7 @@ export function readConfig(): PixelAgentsConfig {
       hooksEnabled: parseHooksEnabled(parsed.hooksEnabled),
     };
   } catch (err) {
-    console.error('[Pixel Agents] Failed to read config file:', err);
+    console.error('[aAgent] Failed to read config file:', err);
     return {
       vscode: { ...DEFAULT_ADAPTER_SETTINGS },
       standalone: { ...DEFAULT_ADAPTER_SETTINGS },
@@ -294,6 +294,6 @@ export function writeConfig(config: PixelAgentsConfig): void {
     fs.writeFileSync(tmpPath, json, 'utf-8');
     fs.renameSync(tmpPath, filePath);
   } catch (err) {
-    console.error('[Pixel Agents] Failed to write config file:', err);
+    console.error('[aAgent] Failed to write config file:', err);
   }
 }

@@ -52,7 +52,7 @@ test.describe('Standalone / multi-server hooks', () => {
       await standalone.drainMessages();
       await waitForClaudeHookSetup(tmpHome);
 
-      const registryDir = path.join(tmpHome, '.pixel-agents', 'servers');
+      const registryDir = path.join(tmpHome, '.aagent', 'servers');
       await expect
         .poll(
           () => {
