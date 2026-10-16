@@ -42,6 +42,7 @@ import {
   writeLayoutToFile,
 } from '../../server/src/layoutPersistence.js';
 import { PathSet } from '../../server/src/pathKey.js';
+import { readPokedex, recordPokemonSeen } from '../../server/src/pokedexPersistence.js';
 import {
   agentPokemonSeed,
   isValidPokemonRequest,
@@ -837,6 +838,12 @@ export class PixelAgentsViewProvider implements vscode.WebviewViewProvider {
           type: 'agentDiagnostics',
           agents: buildAgentDiagnostics(this.store),
         });
+      } else if (message.type === 'recordPokemonSeen') {
+        if (isValidPokemonRequest(message.dex, message.shiny)) {
+          recordPokemonSeen(message.dex, message.shiny as boolean);
+        }
+      } else if (message.type === 'requestPokedex') {
+        this.webview?.postMessage({ type: 'pokedexLoaded', ...readPokedex() });
       } else if (message.type === 'requestPokemonSprites') {
         if (isValidPokemonRequest(message.dex, message.shiny)) {
           void pokemonSpritesMessage(message.dex, message.shiny as boolean).then((reply) =>

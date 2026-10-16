@@ -30,6 +30,7 @@ export type ServerMessage =
   | CharacterSpritesLoaded
   | PetSpritesLoaded
   | PokemonSpritesLoaded
+  | PokedexLoaded
   | FloorTilesLoaded
   | WallTilesLoaded
   | CarpetTilesLoaded
@@ -64,7 +65,9 @@ export type ClientMessage =
   | SaveAreaMappings
   | SetShowAreas
   | RequestDiagnostics
-  | RequestPokemonSprites;
+  | RequestPokemonSprites
+  | RecordPokemonSeen
+  | RequestPokedex;
 
 export interface ProviderCapabilities {
   type: 'providerCapabilities';
@@ -268,6 +271,12 @@ export interface PokemonAnimSheet {
   png: string;
 }
 
+export interface PokedexLoaded {
+  type: 'pokedexLoaded';
+  seen: number[];
+  shiny: number[];
+}
+
 export interface FloorTilesLoaded {
   type: 'floorTilesLoaded';
   sprites: string[][][];
@@ -454,4 +463,14 @@ export interface RequestPokemonSprites {
   type: 'requestPokemonSprites';
   dex: number;
   shiny: boolean;
+}
+
+export interface RecordPokemonSeen {
+  type: 'recordPokemonSeen';
+  dex: number;
+  shiny: boolean;
+}
+
+export interface RequestPokedex {
+  type: 'requestPokedex';
 }

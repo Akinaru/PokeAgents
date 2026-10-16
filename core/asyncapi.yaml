@@ -107,6 +107,7 @@ components:
         - $ref: '#/components/schemas/CharacterSpritesLoaded'
         - $ref: '#/components/schemas/PetSpritesLoaded'
         - $ref: '#/components/schemas/PokemonSpritesLoaded'
+        - $ref: '#/components/schemas/PokedexLoaded'
         - $ref: '#/components/schemas/FloorTilesLoaded'
         - $ref: '#/components/schemas/WallTilesLoaded'
         - $ref: '#/components/schemas/CarpetTilesLoaded'
@@ -146,6 +147,8 @@ components:
         - $ref: '#/components/schemas/SetShowAreas'
         - $ref: '#/components/schemas/RequestDiagnostics'
         - $ref: '#/components/schemas/RequestPokemonSprites'
+        - $ref: '#/components/schemas/RecordPokemonSeen'
+        - $ref: '#/components/schemas/RequestPokedex'
       discriminator: type
 
     # ── Server message variants ────────────────────────────────────
@@ -524,6 +527,24 @@ components:
             $ref: '#/components/schemas/PokemonAnimSheet'
         error:
           type: string
+
+    PokedexLoaded:
+      description: Reply to `requestPokedex`, listing every species (National Dex number) ever seen.
+      type: object
+      additionalProperties: false
+      required: [type, seen, shiny]
+      properties:
+        type:
+          const: pokedexLoaded
+        seen:
+          type: array
+          items:
+            type: integer
+        shiny:
+          type: array
+          description: Species seen at least once as shiny.
+          items:
+            type: integer
 
     PokemonAnimSheet:
       description: One animation sheet, with a row per direction and a column per frame.
@@ -918,6 +939,28 @@ components:
           type: integer
         shiny:
           type: boolean
+
+    RecordPokemonSeen:
+      description: A Pokémon form appeared on screen; add it to the persisted Pokédex.
+      type: object
+      additionalProperties: false
+      required: [type, dex, shiny]
+      properties:
+        type:
+          const: recordPokemonSeen
+        dex:
+          type: integer
+        shiny:
+          type: boolean
+
+    RequestPokedex:
+      description: Ask for the persisted Pokédex (answered by `pokedexLoaded`).
+      type: object
+      additionalProperties: false
+      required: [type]
+      properties:
+        type:
+          const: requestPokedex
 
     SetSoundEnabled:
       type: object

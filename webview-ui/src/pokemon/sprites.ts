@@ -14,6 +14,8 @@ import { isReadingTool } from '../office/engine/characters.js';
 import type { Character, SpriteData } from '../office/types.js';
 import { CharacterState, Direction } from '../office/types.js';
 import { transport } from '../transport/index.js';
+import { startPokemonEffect } from './effects.js';
+import { markPokemonSeen } from './pokedex.js';
 import type { PokemonForm } from './roll.js';
 import { evolutionStage, pokemonForm, rollPokemon } from './roll.js';
 
@@ -164,9 +166,16 @@ export function characterPokemon(ch: Character): PokemonForm | null {
   // Sub-agents are the base form of their parent's line.
   if (ch.isSubagent) return pokemonForm(rolled, 0);
   const ratio = ch.maxContextTokens > 0 ? ch.contextTokens / ch.maxContextTokens : 0;
-  const stage = Math.max(reachedStage.get(ch) ?? 0, evolutionStage(rolled, ratio));
-  reachedStage.set(ch, stage);
-  return pokemonForm(rolled, stage);
+  const previous = reachedStage.get(ch);
+  const stage = Math.max(previous ?? 0, evolutionStage(rolled, ratio));
+  const form = pokemonForm(rolled, stage);
+  if (previous === undefined || stage > previous) {
+    reachedStage.set(ch, stage);
+    markPokemonSeen(form);
+    if (previous !== undefined) startPokemonEffect(ch, 'evolve');
+    else if (form.shiny) startPokemonEffect(ch, 'shiny');
+  }
+  return form;
 }
 
 /** Current Pokémon frame for a character, or null to fall back to the human

@@ -22,6 +22,7 @@ import {
   CHARACTER_SITTING_OFFSET_PX,
   CHARACTER_Z_SORT_OFFSET,
   DELETE_BUTTON_BG,
+  EFFECT_Z_SORT_OFFSET,
   FALLBACK_FLOOR_COLOR,
   GHOST_BORDER_HOVER_FILL,
   GHOST_BORDER_HOVER_STROKE,
@@ -34,6 +35,7 @@ import {
   HEADLESS_CHARACTER_ALPHA,
   HOVERED_OUTLINE_ALPHA,
   OUTLINE_Z_SORT_OFFSET,
+  POKEMON_SPARKLE_COLOR,
   ROTATE_BUTTON_BG,
   SEAT_AVAILABLE_COLOR,
   SEAT_BUSY_COLOR,
@@ -44,6 +46,8 @@ import {
   VOID_TILE_DASH_PATTERN,
   VOID_TILE_OUTLINE_COLOR,
 } from '../../constants.js';
+import type { PokemonEffectKind } from '../../pokemon/effects.js';
+import { pokemonEffect } from '../../pokemon/effects.js';
 import { getPokemonSprite } from '../../pokemon/sprites.js';
 import { getColorizedFloorSprite, hasFloorSprites, WALL_COLOR } from '../floorTiles.js';
 import { mapOffset } from '../projection.js';
@@ -53,7 +57,7 @@ import {
   hasCarpetSprites,
 } from '../sprites/carpetTiles.js';
 import { getPetSprites } from '../sprites/petSpriteData.js';
-import { getCachedSprite, getOutlineSprite } from '../sprites/spriteCache.js';
+import { getCachedSprite, getOutlineSprite, getSilhouetteSprite } from '../sprites/spriteCache.js';
 import {
   BUBBLE_HEART_SPRITE,
   BUBBLE_PERMISSION_SPRITE,
@@ -462,6 +466,15 @@ export function renderScene(
         c.restore();
       },
     });
+
+    const effect = pokemonEffect(ch, timeSec);
+    if (effect) {
+      drawables.push({
+        zY: charZY + EFFECT_Z_SORT_OFFSET,
+        draw: (c) =>
+          renderPokemonEffect(c, effect.kind, effect.progress, spriteData, drawX, drawY, zoom),
+      });
+    }
   }
 
   // ── Pets ──────────────────────────────────────────────
@@ -493,6 +506,39 @@ export function renderScene(
   for (const d of drawables) {
     d.draw(ctx);
   }
+}
+
+/** Evolution: the sprite flickers white. Shiny: four sparkles orbit the sprite. */
+function renderPokemonEffect(
+  ctx: CanvasRenderingContext2D,
+  kind: PokemonEffectKind,
+  progress: number,
+  sprite: SpriteData,
+  drawX: number,
+  drawY: number,
+  zoom: number,
+): void {
+  ctx.save();
+  if (kind === 'evolve') {
+    ctx.globalAlpha = Math.abs(Math.sin(progress * Math.PI * 5));
+    ctx.drawImage(getCachedSprite(getSilhouetteSprite(sprite), zoom), drawX, drawY);
+  } else {
+    const w = sprite[0].length * zoom;
+    const h = sprite.length * zoom;
+    const cx = drawX + w / 2;
+    const cy = drawY + h / 2;
+    ctx.globalAlpha = 1 - progress;
+    ctx.fillStyle = POKEMON_SPARKLE_COLOR;
+    for (let i = 0; i < 4; i++) {
+      const angle = progress * Math.PI * 2 + (i * Math.PI) / 2;
+      const sx = Math.round(cx + (Math.cos(angle) * w) / 2);
+      const sy = Math.round(cy + (Math.sin(angle) * h) / 2);
+      // A small 4-point star: 3x1 + 1x3 sprite pixels
+      ctx.fillRect(sx - zoom, sy, zoom * 3, zoom);
+      ctx.fillRect(sx, sy - zoom, zoom, zoom * 3);
+    }
+  }
+  ctx.restore();
 }
 
 // ── Seat indicators ─────────────────────────────────────────────

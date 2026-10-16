@@ -23,6 +23,23 @@
 
 <br/>
 
+> **aAgent** is a personal fork of Pixel Agents with a Pokémon theme:
+>
+> - Every Claude Code session appears as a random wild Pokémon, weighted by capture rate (legendaries are rare), with a 1/64 shiny chance.
+> - The Pokémon evolves as its session's context window fills up.
+> - It plays its cry when its agent finishes a turn.
+> - The office is replaced by a route map.
+> - A Pokédex keeps every species you've met.
+>
+> **Credits:**
+>
+> - Overworld sprites come from the [PMDCollab SpriteCollab](https://github.com/PMDCollab/SpriteCollab) project. They are licensed under [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/), so this fork is non-commercial.
+> - Species data, cries and Pokédex icons come from [PokeAPI](https://pokeapi.co/).
+> - Sprites are downloaded at runtime and are not stored in this repository.
+> - Pokémon is © Nintendo / Creatures Inc. / GAME FREAK inc.; this is an unofficial fan project.
+>
+> To regenerate the bundled data, run `npx tsx scripts/generate-pokedex.ts`. To regenerate the route tileset and map, run `npx tsx scripts/generate-route-assets.ts`.
+
 Pixel Agents turns the AI coding agents running in your terminals into animated pixel-art characters working in a tiny office. They walk to their desks, sit down, type when they're editing files, read when they're searching, and flag you visually when they're stuck waiting for input.
 
 It ships in two forms from the same codebase:

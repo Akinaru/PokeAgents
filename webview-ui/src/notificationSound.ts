@@ -11,6 +11,8 @@ import {
   PERMISSION_NOTE_2_START_SEC,
   PERMISSION_NOTE_DURATION_SEC,
   PERMISSION_VOLUME,
+  POKEMON_CRY_URL,
+  POKEMON_CRY_VOLUME,
 } from './constants.js';
 import { isE2E } from './runtime.js';
 
@@ -63,9 +65,30 @@ function playNote(
   osc.stop(t + duration);
 }
 
-export async function playDoneSound(): Promise<void> {
+const cries = new Map<number, HTMLAudioElement>();
+
+/** Play a Pokémon's cry; resolves false when it cannot play (offline, blocked). */
+async function playCry(dex: number): Promise<boolean> {
+  try {
+    let cry = cries.get(dex);
+    if (!cry) {
+      cry = new Audio(`${POKEMON_CRY_URL}/${dex}.ogg`);
+      cry.volume = POKEMON_CRY_VOLUME;
+      cries.set(dex, cry);
+    }
+    cry.currentTime = 0;
+    await cry.play();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Turn-finished sound: the agent's Pokémon cry when given, else the two-note chime. */
+export async function playDoneSound(cryDex?: number): Promise<void> {
   recordSoundForTests('done');
   if (!soundEnabled) return;
+  if (cryDex !== undefined && (await playCry(cryDex))) return;
   try {
     if (!audioCtx) {
       audioCtx = new AudioContext();

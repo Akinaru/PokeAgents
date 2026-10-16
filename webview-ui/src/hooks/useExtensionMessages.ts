@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import type { HooksConsentRequest, PokemonSpritesLoaded } from '../../../core/src/messages.js';
+import type {
+  HooksConsentRequest,
+  PokedexLoaded,
+  PokemonSpritesLoaded,
+} from '../../../core/src/messages.js';
 import { playDoneSound, playPermissionSound, setSoundEnabled } from '../notificationSound.js';
 import type { ExistingAgentMeta, PendingAgent } from '../office/engine/existingAgents.js';
 import { reconcileExistingAgents } from '../office/engine/existingAgents.js';
@@ -19,7 +23,8 @@ import {
 } from '../office/toolUtils.js';
 import type { OfficeLayout, ToolActivity } from '../office/types.js';
 import { setWallSprites } from '../office/wallTiles.js';
-import { onPokemonSpritesLoaded } from '../pokemon/sprites.js';
+import { onPokedexLoaded } from '../pokemon/pokedex.js';
+import { characterPokemon, onPokemonSpritesLoaded } from '../pokemon/sprites.js';
 import { isBrowserRuntime, isE2E } from '../runtime.js';
 import { transport } from '../transport/index.js';
 
@@ -491,7 +496,8 @@ export function useExtensionMessages(
         os.setAgentActive(id, status === 'active');
         if (status === 'waiting') {
           os.showWaitingBubble(id, msg.awaitingInput === true);
-          playDoneSound();
+          const ch = os.characters.get(id);
+          playDoneSound(ch ? characterPokemon(ch)?.dex : undefined);
         }
       } else if (msg.type === 'agentToolPermission') {
         const id = msg.id as number;
@@ -613,6 +619,8 @@ export function useExtensionMessages(
         }>;
         console.log(`[Webview] Received ${characters.length} pre-colored character sprites`);
         setCharacterTemplates(characters);
+      } else if (msg.type === 'pokedexLoaded') {
+        onPokedexLoaded(msg as unknown as PokedexLoaded);
       } else if (msg.type === 'pokemonSpritesLoaded') {
         void onPokemonSpritesLoaded(msg as unknown as PokemonSpritesLoaded);
       } else if (msg.type === 'petSpritesLoaded') {

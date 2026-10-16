@@ -105,6 +105,7 @@ export const POKEMON_CACHE_DIR_NAME = 'pokemon';
 /** Species (normal and shiny counted separately) kept on disk; ~30 KB each. */
 export const POKEMON_CACHE_MAX_ENTRIES = 128;
 export const POKEMON_FETCH_TIMEOUT_MS = 15_000;
+export const POKEDEX_FILE_NAME = 'pokedex.json';
 
 // ── Avatar Customization ────────────────────────────────────
 /** Number of pre-colored bundled character palettes (char_0.png–char_5.png).

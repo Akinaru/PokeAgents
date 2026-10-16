@@ -37,6 +37,14 @@ for (const [dex, , , evolvesFrom] of pokedex as PokedexEntry[]) {
   if (parent) parent.evolutions.push(species);
   else baseSpecies.push(species);
 }
+
+/** Species an agent can be (those with every overworld animation). */
+export const POKEDEX_SPECIES_COUNT = speciesByDex.size;
+
+export function speciesName(dex: number): string | undefined {
+  return speciesByDex.get(dex)?.name;
+}
+
 // Capture rate doubles as encounter weight: common Pokémon ~255, legendaries ~3.
 const totalWeight = baseSpecies.reduce((sum, s) => sum + s.captureRate, 0);
 

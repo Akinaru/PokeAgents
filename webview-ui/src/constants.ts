@@ -39,6 +39,8 @@ export const MATRIX_TRAIL_DIM_THRESHOLD = 0.66;
 export const CHARACTER_SITTING_OFFSET_PX = 6;
 export const CHARACTER_Z_SORT_OFFSET = 0.5;
 export const OUTLINE_Z_SORT_OFFSET = 0.001;
+/** Pokémon effects (flash, sparkles) sort just after their character */
+export const EFFECT_Z_SORT_OFFSET = 0.002;
 export const SELECTED_OUTLINE_ALPHA = 1.0;
 export const HOVERED_OUTLINE_ALPHA = 0.5;
 /** Headless agents (adopted, no terminal to focus) render slightly translucent. */
@@ -322,3 +324,15 @@ export const POKEMON_EVOLUTION_THRESHOLDS = [0.3, 0.6];
 export const POKEMON_GROUND_OFFSET_PX = 6;
 /** PMD animation durations are expressed in 60 Hz game ticks. */
 export const POKEMON_TICKS_PER_SEC = 60;
+/** White flicker shown while an agent's Pokémon evolves. */
+export const POKEMON_EVOLVE_EFFECT_SEC = 1.6;
+/** Sparkles shown when a shiny Pokémon appears. */
+export const POKEMON_SHINY_EFFECT_SEC = 2;
+export const POKEMON_SPARKLE_COLOR = '#FFF6A8';
+/** Cries of the current form play when an agent finishes its turn. */
+export const POKEMON_CRY_URL =
+  'https://raw.githubusercontent.com/PokeAPI/cries/main/cries/pokemon/latest';
+export const POKEMON_CRY_VOLUME = 0.25;
+/** Front sprites shown in the Pokédex (static PNGs, ~1 KB each). */
+export const POKEMON_ICON_URL =
+  'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white';

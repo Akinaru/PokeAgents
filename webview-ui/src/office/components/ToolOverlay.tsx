@@ -18,6 +18,7 @@ import {
   TOOL_OVERLAY_VERTICAL_OFFSET,
 } from '../../constants.js';
 import type { SubagentCharacter } from '../../hooks/useExtensionMessages.js';
+import { characterPokemon } from '../../pokemon/sprites.js';
 import type { OfficeState } from '../engine/officeState.js';
 import { overlayProjection } from '../projection.js';
 import type { ToolActivity } from '../types.js';
@@ -203,7 +204,14 @@ export function ToolOverlay({
 
         // Team info
         const teamRoleLabel = ch.isTeamLead ? 'LEAD' : ch.agentName || null;
-        const hasExtraLines = !!(ch.folderName || teamRoleLabel);
+        const pokemon = characterPokemon(ch);
+        const identityLabel = [
+          pokemon && `${pokemon.name}${pokemon.shiny ? ' ★' : ''}`,
+          ch.folderName,
+        ]
+          .filter(Boolean)
+          .join(' · ');
+        const hasExtraLines = !!(identityLabel || teamRoleLabel);
 
         // Context gauge. Every agent gets one — lead, teammate, adopted,
         // headless — as soon as it has taken a turn. Sub-agents never do: they
@@ -254,9 +262,9 @@ export function ToolOverlay({
                 >
                   {activityText}
                 </span>
-                {ch.folderName && (
+                {identityLabel && (
                   <span className="text-2xs leading-none overflow-hidden text-ellipsis block">
-                    {ch.folderName}
+                    {identityLabel}
                   </span>
                 )}
               </div>

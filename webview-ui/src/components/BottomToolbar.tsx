@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { WorkspaceFolder } from '../hooks/useExtensionMessages.js';
 import { isBrowserRuntime } from '../runtime.js';
 import { transport } from '../transport/index.js';
+import { PokedexModal } from './PokedexModal.js';
 import { Button } from './ui/Button.js';
 import { Dropdown, DropdownItem } from './ui/Dropdown.js';
 
@@ -25,6 +26,7 @@ export function BottomToolbar({
 }: BottomToolbarProps) {
   const [isFolderPickerOpen, setIsFolderPickerOpen] = useState(false);
   const [isBypassMenuOpen, setIsBypassMenuOpen] = useState(false);
+  const [isPokedexOpen, setIsPokedexOpen] = useState(false);
   const folderPickerRef = useRef<HTMLDivElement>(null);
   const pendingBypassRef = useRef(false);
   // Close folder picker / bypass menu on outside click
@@ -134,6 +136,14 @@ export function BottomToolbar({
       >
         Settings
       </Button>
+      <Button
+        variant={isPokedexOpen ? 'active' : 'default'}
+        onClick={() => setIsPokedexOpen((v) => !v)}
+        title="Pokédex"
+      >
+        Pokédex
+      </Button>
+      <PokedexModal isOpen={isPokedexOpen} onClose={() => setIsPokedexOpen(false)} />
     </div>
   );
 }

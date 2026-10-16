@@ -45,6 +45,18 @@ export function getOutlineSprite(sprite: SpriteData): SpriteData {
   return outline;
 }
 
+const silhouetteCache = new WeakMap<SpriteData, SpriteData>();
+
+/** Same shape as the sprite, every opaque pixel white (evolution flash). */
+export function getSilhouetteSprite(sprite: SpriteData): SpriteData {
+  let silhouette = silhouetteCache.get(sprite);
+  if (!silhouette) {
+    silhouette = sprite.map((row) => row.map((px) => (px === '' ? '' : '#FFFFFF')));
+    silhouetteCache.set(sprite, silhouette);
+  }
+  return silhouette;
+}
+
 export function getCachedSprite(sprite: SpriteData, zoom: number): HTMLCanvasElement {
   let cache = zoomCaches.get(zoom);
   if (!cache) {
