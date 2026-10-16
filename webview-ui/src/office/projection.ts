@@ -14,6 +14,7 @@
  * graph that imports it.
  */
 
+import type { TiltCamera } from './camera.js';
 import { tiltCamera } from './camera.js';
 import { TILE_SIZE } from './types.js';
 
@@ -117,6 +118,30 @@ export function containedPan(
   return { x: Math.max(minX, Math.min(maxX, pan.x)), y };
 }
 
+/**
+ * The camera of the untouched view: the first zoom from `minZoom` up at which
+ * the tilted map fills the canvas (the live camera zooms in the same way), with
+ * the map centered and kept inside its edges.
+ */
+export function baseView(
+  canvasWidth: number,
+  canvasHeight: number,
+  cols: number,
+  rows: number,
+  minZoom: number,
+  maxZoom: number,
+): { zoom: number; camera: TiltCamera } {
+  let zoom = minZoom;
+  let pan = containedPan(canvasWidth, canvasHeight, cols, rows, zoom, { x: 0, y: 0 });
+  while (!pan && zoom < maxZoom) {
+    zoom++;
+    pan = containedPan(canvasWidth, canvasHeight, cols, rows, zoom, { x: 0, y: 0 });
+  }
+  const { x, y } = pan ?? { x: 0, y: 0 };
+  const { offsetX, offsetY } = mapOffset(canvasWidth, canvasHeight, cols, rows, zoom, x, y);
+  return { zoom, camera: tiltCamera(offsetX, offsetY, cols, rows, zoom) };
+}
+
 /** Device-px margins kept clear inside the canvas edges. */
 export interface ScreenMargins {
   top: number;
@@ -124,25 +149,15 @@ export interface ScreenMargins {
   side: number;
 }
 
-/**
- * Tiles whose center the tilted camera shows inside the canvas, `margins` in
- * from its edges, at `zoom` with the map centered (the default view, kept
- * inside the map's edges like the live camera).
- */
+/** Tiles whose center `camera` shows inside the canvas, `margins` in from its edges. */
 export function tilesInView(
+  camera: TiltCamera,
   canvasWidth: number,
   canvasHeight: number,
   cols: number,
   rows: number,
-  zoom: number,
   margins: ScreenMargins,
 ): Set<string> {
-  const pan = containedPan(canvasWidth, canvasHeight, cols, rows, zoom, { x: 0, y: 0 }) ?? {
-    x: 0,
-    y: 0,
-  };
-  const { offsetX, offsetY } = mapOffset(canvasWidth, canvasHeight, cols, rows, zoom, pan.x, pan.y);
-  const camera = tiltCamera(offsetX, offsetY, cols, rows, zoom);
   const tiles = new Set<string>();
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < cols; col++) {

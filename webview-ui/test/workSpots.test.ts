@@ -95,12 +95,14 @@ test('wild Pokémon: distinct, non-shiny, stable for a day', () => {
   assert.deepEqual(rollWildPokemon(20261016, 5), wild);
 });
 
-test('tilesInView keeps the map center and drops tiles past the margins', async () => {
-  const { tilesInView } = await import('../src/office/projection.js');
-  const all = tilesInView(1400, 700, 52, 26, 4, { top: 0, bottom: 0, side: 0 });
-  const inner = tilesInView(1400, 700, 52, 26, 4, { top: 160, bottom: 180, side: 80 });
-  assert.ok(inner.has('26,13'));
-  assert.ok(inner.size < all.size);
-  assert.ok(![...inner].some((t) => !all.has(t)));
-  assert.ok(!all.has('0,0'), 'the default view does not reach the far corner');
+test('the untouched view zooms in until the map fills the canvas', async () => {
+  const { baseView, tilesInView } = await import('../src/office/projection.js');
+  // A wide, short panel: the map cannot fill it at zoom 2
+  const view = baseView(2800, 500, 52, 26, 2, 10);
+  assert.ok(view.zoom > 2);
+  const all = tilesInView(view.camera, 2800, 500, 52, 26, { top: 0, bottom: 0, side: 0 });
+  const inner = tilesInView(view.camera, 2800, 500, 52, 26, { top: 120, bottom: 160, side: 60 });
+  assert.ok(inner.size > 0 && inner.size < all.size);
+  assert.ok([...inner].every((t) => all.has(t)));
+  assert.ok(!all.has('0,0'), 'the far corner is out of view');
 });

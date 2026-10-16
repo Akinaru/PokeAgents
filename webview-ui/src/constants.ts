@@ -332,17 +332,24 @@ export const WORK_SPOT_FIRST_MAX_SEC = 9;
 /** ...then stays MIN-MAX seconds at each spot before moving on. */
 export const WORK_SPOT_DWELL_MIN_SEC = 9;
 export const WORK_SPOT_DWELL_MAX_SEC = 18;
+/** An agent found out of view heads back in within this many seconds. */
+export const WORK_SPOT_RETURN_SEC = 1;
 /** Agents keep at least this many tiles (Chebyshev) between each other's spots. */
 export const WORK_SPOT_MIN_SPACING_TILES = 6;
 /** Spots farther than this (Manhattan) are only used when none is closer. */
 export const WORK_SPOT_MAX_DISTANCE_TILES = 16;
 
-/** CSS px kept clear at the edges of the default view: agents work only on
- *  tiles shown inside it, so they stay on screen and clickable. The top margin
- *  leaves room for the sprite above its feet, the bottom one for the toolbar. */
-export const PLAY_AREA_MARGINS_CSS = { top: 80, bottom: 90, side: 40 };
-/** Wild Pokémon may roam this many CSS px further out than agents. */
-export const ROAM_AREA_EXTRA_CSS_PX = 50;
+/** Edges of the untouched view agents keep clear of, so their sprite and
+ *  nametag stay whole on screen and clickable: world px for the sprite (above
+ *  its feet, around it), plus CSS px for the nametag on the sides and the
+ *  toolbar along the bottom. */
+export const PLAY_AREA_TOP_WORLD_PX = 48;
+export const PLAY_AREA_SIDE_WORLD_PX = 28;
+export const PLAY_AREA_BOTTOM_WORLD_PX = 16;
+export const PLAY_AREA_NAMETAG_CSS_PX = 80;
+export const PLAY_AREA_TOOLBAR_CSS_PX = 70;
+/** Wild Pokémon may roam this many world px further out than agents. */
+export const ROAM_AREA_EXTRA_WORLD_PX = 14;
 
 // ── Wild Pokémon ─────────────────────────────────────────────
 /** Wild Pokémon roaming the route, a new set every day. */

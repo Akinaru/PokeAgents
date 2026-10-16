@@ -7,6 +7,7 @@ import {
   WORK_SPOT_DWELL_MIN_SEC,
   WORK_SPOT_FIRST_MAX_SEC,
   WORK_SPOT_FIRST_MIN_SEC,
+  WORK_SPOT_RETURN_SEC,
 } from '../../constants.js';
 import { createActivity } from '../../pokemon/activity.js';
 import { findPath } from '../layout/tileMap.js';
@@ -15,6 +16,13 @@ import { isReadingToolName } from '../toolUtils.js';
 import type { Character, Seat, SpriteData, TileType as TileTypeVal } from '../types.js';
 import { CharacterState, Direction, TILE_SIZE } from '../types.js';
 import type { WorkSpot } from './workSpots.js';
+
+/** The part of the map agents keep to (see OfficeState.setViewArea). */
+export interface AgentArea {
+  /** The next spot of a working agent, or of one that must get back in view. */
+  nextWorkSpot(ch: Character): WorkSpot | null;
+  inView(col: number, row: number): boolean;
+}
 
 const randomRange = (min: number, max: number): number => min + Math.random() * (max - min);
 
@@ -101,8 +109,8 @@ export function updateCharacter(
   seats: Map<string, Seat>,
   tileMap: TileTypeVal[][],
   blockedTiles: Set<string>,
-  /** Picks the next spot of a working agent; omitted, agents keep to their seat. */
-  nextWorkSpot?: (ch: Character) => WorkSpot | null,
+  /** Where agents may go; omitted, they keep to their seat. */
+  area?: AgentArea,
 ): void {
   ch.frameTimer += dt;
   // Where the agent belongs right now: its work spot, else its seat
@@ -121,12 +129,16 @@ export function updateCharacter(
       }
       // A resting agent stays where it is: its Pokémon sleeps there until the
       // next turn. A working one moves from spot to spot to keep busy.
-      if (!ch.isActive || !nextWorkSpot || ch.isSubagent) break;
+      // Out of view (an old spot, a seat off screen), it walks back in at once.
+      if (!area || ch.isSubagent) break;
+      const outOfView = !area.inView(ch.tileCol, ch.tileRow);
+      if (!ch.isActive && !outOfView) break;
+      if (outOfView) ch.workTimer = Math.min(ch.workTimer, WORK_SPOT_RETURN_SEC);
       ch.workTimer -= dt;
       if (ch.workTimer > 0) break;
       ch.workTimer = randomRange(WORK_SPOT_DWELL_MIN_SEC, WORK_SPOT_DWELL_MAX_SEC);
       {
-        const spot = nextWorkSpot(ch);
+        const spot = area.nextWorkSpot(ch);
         if (!spot) break;
         const path = findPath(ch.tileCol, ch.tileRow, spot.col, spot.row, tileMap, blockedTiles);
         if (path.length === 0) break;

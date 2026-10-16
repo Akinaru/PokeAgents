@@ -5,8 +5,12 @@ import {
   CAMERA_FOLLOW_SNAP_THRESHOLD,
   PAN_MARGIN_FRACTION,
   PAN_SPRING_LERP,
-  PLAY_AREA_MARGINS_CSS,
-  ROAM_AREA_EXTRA_CSS_PX,
+  PLAY_AREA_BOTTOM_WORLD_PX,
+  PLAY_AREA_NAMETAG_CSS_PX,
+  PLAY_AREA_SIDE_WORLD_PX,
+  PLAY_AREA_TOOLBAR_CSS_PX,
+  PLAY_AREA_TOP_WORLD_PX,
+  ROAM_AREA_EXTRA_WORLD_PX,
   ZOOM_MAX,
   ZOOM_MIN,
   ZOOM_SCROLL_THRESHOLD,
@@ -29,7 +33,7 @@ import type {
 } from '../engine/renderer.js';
 import { renderFrame } from '../engine/renderer.js';
 import { getCatalogEntry, isRotatable } from '../layout/furnitureCatalog.js';
-import { containedPan, mapOffset, tilesInView } from '../projection.js';
+import { baseView, containedPan, mapOffset, tilesInView } from '../projection.js';
 import { EditTool, TILE_SIZE } from '../types.js';
 import { computeNormalModeCursor } from './officeCanvasCursor.js';
 
@@ -150,17 +154,19 @@ export function OfficeCanvas({
         const areaKey = `${w}x${h}:${areaLayout.cols}x${areaLayout.rows}:${dpr}`;
         if (w > 0 && h > 0 && viewAreaKeyRef.current !== areaKey) {
           viewAreaKeyRef.current = areaKey;
-          const z = defaultZoom();
-          const m = PLAY_AREA_MARGINS_CSS;
-          const play = { top: m.top * dpr, bottom: m.bottom * dpr, side: m.side * dpr };
-          const extra = ROAM_AREA_EXTRA_CSS_PX * dpr;
+          const { cols, rows } = areaLayout;
+          const view = baseView(w, h, cols, rows, defaultZoom(), ZOOM_MAX);
+          const z = view.zoom;
+          // Wild Pokémon have no nametag: only their sprite has to stay in
+          const margins = (extra: number) => ({
+            top: (PLAY_AREA_TOP_WORLD_PX - extra) * z,
+            side:
+              (PLAY_AREA_SIDE_WORLD_PX - extra) * z + (extra ? 0 : PLAY_AREA_NAMETAG_CSS_PX * dpr),
+            bottom: (PLAY_AREA_BOTTOM_WORLD_PX - extra) * z + PLAY_AREA_TOOLBAR_CSS_PX * dpr,
+          });
           officeState.setViewArea(
-            tilesInView(w, h, areaLayout.cols, areaLayout.rows, z, play),
-            tilesInView(w, h, areaLayout.cols, areaLayout.rows, z, {
-              top: play.top - extra,
-              bottom: play.bottom - extra,
-              side: play.side - extra,
-            }),
+            tilesInView(view.camera, w, h, cols, rows, margins(0)),
+            tilesInView(view.camera, w, h, cols, rows, margins(ROAM_AREA_EXTRA_WORLD_PX)),
           );
         }
 

@@ -44,6 +44,7 @@ import type {
   TileType as TileTypeVal,
 } from '../types.js';
 import { CharacterState, Direction, PetState, TILE_SIZE } from '../types.js';
+import type { AgentArea } from './characters.js';
 import { createCharacter, firstWorkDelay, updateCharacter } from './characters.js';
 import { advanceMatrixEffect, startMatrixEffect } from './matrixEffectState.js';
 import { createPet, updatePet } from './petEntity.js';
@@ -76,6 +77,9 @@ export class OfficeState {
    *  area wild Pokémon roam; null until the canvas has measured itself. */
   private playTiles: Set<string> | null = null;
   private roamTiles: Set<string> | null = null;
+  /** blockedTiles plus every tile out of view: agents in view path through
+   *  view only, so even the way between two spots stays on screen. */
+  private viewBlockedTiles = new Set<string>();
   /** Walkable tiles inside roamTiles: where wild Pokémon wander. */
   private wildTiles: Array<{ col: number; row: number }> = [];
   /** Accumulated time for furniture animation frame cycling */
@@ -281,11 +285,15 @@ export class OfficeState {
   }
 
   /** Temporarily unblock a character's own seat, run fn, then re-block */
-  private withOwnSeatUnblocked<T>(ch: Character, fn: () => T): T {
+  private withOwnSeatUnblocked<T>(
+    ch: Character,
+    fn: () => T,
+    blocked: Set<string> = this.blockedTiles,
+  ): T {
     const key = this.ownSeatKey(ch);
-    if (key) this.blockedTiles.delete(key);
+    if (key) blocked.delete(key);
     const result = fn();
-    if (key) this.blockedTiles.add(key);
+    if (key) blocked.add(key);
     return result;
   }
 
@@ -387,6 +395,12 @@ export class OfficeState {
       if (!seat.assigned) freeSeats.push(uid);
     }
     if (freeSeats.length === 0) return null;
+    // Seats on screen first, so new agents appear where they can be clicked
+    const seen = freeSeats.filter((uid) => {
+      const seat = this.seats.get(uid)!;
+      return this.inView(seat.seatCol, seat.seatRow);
+    });
+    if (seen.length > 0) freeSeats.splice(0, freeSeats.length, ...seen);
 
     const areaLabels = folderName ? this.areaMappings[folderName] : undefined;
 
@@ -956,7 +970,23 @@ export class OfficeState {
       (t) => !this.roamTiles || this.roamTiles.has(`${t.col},${t.row}`),
     );
     this.wildTiles = inRoam.length > 0 ? inRoam : this.walkableTiles;
+    this.viewBlockedTiles = new Set(this.blockedTiles);
+    if (this.playTiles) {
+      for (const t of this.walkableTiles) {
+        const key = `${t.col},${t.row}`;
+        if (!this.playTiles.has(key)) this.viewBlockedTiles.add(key);
+      }
+    }
   }
+
+  private inView(col: number, row: number): boolean {
+    return !this.playTiles || this.playTiles.has(`${col},${row}`);
+  }
+
+  private readonly agentArea: AgentArea = {
+    nextWorkSpot: (ch) => this.nextWorkSpot(ch),
+    inView: (col, row) => this.inView(col, row),
+  };
 
   /** Keep agents' spots and wild Pokémon's walks inside what the default view shows. */
   setViewArea(play: Set<string>, roam: Set<string>): void {
@@ -967,7 +997,7 @@ export class OfficeState {
   }
 
   /** Next spot for a working agent, away from every other agent. */
-  private nextWorkSpot = (ch: Character): WorkSpot | null => {
+  private nextWorkSpot(ch: Character): WorkSpot | null {
     const others: Array<{ col: number; row: number }> = [];
     for (const other of this.characters.values()) {
       if (other === ch || other.isSubagent) continue;
@@ -983,7 +1013,7 @@ export class OfficeState {
       WORK_SPOT_MIN_SPACING_TILES,
       WORK_SPOT_MAX_DISTANCE_TILES,
     );
-  };
+  }
 
   // ── Wild Pokémon ──────────────────────────────────────────────
 
@@ -1211,9 +1241,16 @@ export class OfficeState {
         continue; // skip normal FSM while the effect is (or just was) active
       }
 
-      // Temporarily unblock own seat so character can pathfind to it
-      this.withOwnSeatUnblocked(ch, () =>
-        updateCharacter(ch, dt, this.seats, this.tileMap, this.blockedTiles, this.nextWorkSpot),
+      // Temporarily unblock own seat so character can pathfind to it. In view,
+      // agents path through view only; out of it, through anything to get back.
+      const blocked =
+        !ch.isSubagent && this.inView(ch.tileCol, ch.tileRow)
+          ? this.viewBlockedTiles
+          : this.blockedTiles;
+      this.withOwnSeatUnblocked(
+        ch,
+        () => updateCharacter(ch, dt, this.seats, this.tileMap, blocked, this.agentArea),
+        blocked,
       );
 
       // Tick bubble timer for waiting bubbles
