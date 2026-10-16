@@ -49,4 +49,6 @@ agent-orchestrator.yaml
 # Agent-orchestrator / tooling scaffolding
 .ao/
 .serena/
-tasks/tmp/
+tasks/
+# Local references and game assets (never published)
+tmp/

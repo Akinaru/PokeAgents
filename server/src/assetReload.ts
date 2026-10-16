@@ -14,6 +14,7 @@ import {
   mergePetSprites,
 } from './assetLoader.js';
 import type { AssetCache } from './clientMessageHandler.js';
+import { loadAllMapBackgrounds } from './mapBackgrounds.js';
 import { setPaletteCount } from './paletteAssigner.js';
 
 /**
@@ -93,6 +94,7 @@ export async function buildAssetCache(
     wallTiles: await loadWallTiles(distRoot).then((t) => t?.sets ?? null),
     carpetTiles: await loadCarpetTiles(distRoot).then((t) => t?.sets ?? null),
     furniture: await loadAllFurniture(distRoot, externalDirs),
+    mapBackgrounds: loadAllMapBackgrounds(externalDirs),
     defaultLayout: loadDefaultLayout(distRoot),
   };
 }

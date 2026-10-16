@@ -107,6 +107,9 @@ export const POKEMON_CACHE_MAX_ENTRIES = 128;
 export const POKEMON_FETCH_TIMEOUT_MS = 15_000;
 export const POKEDEX_FILE_NAME = 'pokedex.json';
 
+// ── Map backgrounds from external asset directories ─────────
+export const MAX_MAP_BACKGROUND_PNG_SIZE = 4 * 1024 * 1024;
+
 // ── Avatar Customization ────────────────────────────────────
 /** Number of pre-colored bundled character palettes (char_0.png–char_5.png).
  *  Mirrors `PALETTE_COUNT` in webview-ui/src/constants.ts; kept separate

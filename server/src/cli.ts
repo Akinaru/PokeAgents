@@ -27,6 +27,7 @@ import {
 } from './configPersistence.js';
 import { MAX_PORT, MIN_PORT } from './constants.js';
 import { FileStateAdapter } from './fileStateAdapter.js';
+import { loadAllMapBackgrounds } from './mapBackgrounds.js';
 import { claudeProvider, copyHookScript, hookProviderById } from './providers/index.js';
 import { PixelAgentsServer } from './server.js';
 
@@ -207,6 +208,7 @@ async function main(): Promise<void> {
       assetCache.characters = characters;
       assetCache.pets = pets;
       assetCache.furniture = furniture;
+      assetCache.mapBackgrounds = loadAllMapBackgrounds(externalDirs);
       if (characters) {
         send({ type: 'characterSpritesLoaded', characters: characters.characters });
       }
@@ -224,6 +226,7 @@ async function main(): Promise<void> {
           sprites: Object.fromEntries(furniture.sprites),
         });
       }
+      send({ type: 'mapBackgroundsLoaded', backgrounds: assetCache.mapBackgrounds });
       console.log('[aAgent] Assets reloaded (external directory change)');
     };
 

@@ -9,124 +9,13 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
-import { PNG } from 'pngjs';
+
+import type { RGBA } from './lib/pixelCanvas.js';
+import { Canvas, gray, hex, jitter, rng, valueNoise } from './lib/pixelCanvas.js';
+import type { RouteShapes } from './lib/route1.js';
+import { COLS, ROUTE_BACKGROUND, ROUTE_SHAPES, ROWS, routeDecor } from './lib/route1.js';
 
 const ASSETS_DIR = path.join(__dirname, '..', 'webview-ui', 'public', 'assets');
-
-type RGBA = [number, number, number, number];
-
-const hex = (h: string, a = 255): RGBA => [
-  parseInt(h.slice(1, 3), 16),
-  parseInt(h.slice(3, 5), 16),
-  parseInt(h.slice(5, 7), 16),
-  a,
-];
-const gray = (v: number): RGBA => [v, v, v, 255];
-
-class Canvas {
-  readonly data: Uint8Array;
-  constructor(
-    readonly w: number,
-    readonly h: number,
-  ) {
-    this.data = new Uint8Array(w * h * 4);
-  }
-
-  set(x: number, y: number, c: RGBA): void {
-    x = Math.round(x);
-    y = Math.round(y);
-    if (x < 0 || y < 0 || x >= this.w || y >= this.h) return;
-    const i = (y * this.w + x) * 4;
-    const a = c[3] / 255;
-    const under = this.data[i + 3] / 255;
-    // Alpha-composite so translucent shadows stack under opaque shapes correctly.
-    const outA = a + under * (1 - a);
-    for (let k = 0; k < 3; k++) {
-      this.data[i + k] = outA === 0 ? 0 : (c[k] * a + this.data[i + k] * under * (1 - a)) / outA;
-    }
-    this.data[i + 3] = Math.round(outA * 255);
-  }
-
-  /** Same as set, but wraps around the edges (for seamless floor tiles). */
-  setWrap(x: number, y: number, c: RGBA): void {
-    this.set(((x % this.w) + this.w) % this.w, ((y % this.h) + this.h) % this.h, c);
-  }
-
-  opaque(x: number, y: number): boolean {
-    if (x < 0 || y < 0 || x >= this.w || y >= this.h) return false;
-    return this.data[(y * this.w + x) * 4 + 3] > 0;
-  }
-
-  fill(c: RGBA): void {
-    for (let y = 0; y < this.h; y++) for (let x = 0; x < this.w; x++) this.set(x, y, c);
-  }
-
-  rect(x0: number, y0: number, w: number, h: number, c: RGBA): void {
-    for (let y = y0; y < y0 + h; y++) for (let x = x0; x < x0 + w; x++) this.set(x, y, c);
-  }
-
-  ellipse(cx: number, cy: number, rx: number, ry: number, c: RGBA): void {
-    for (let y = Math.floor(cy - ry); y <= Math.ceil(cy + ry); y++) {
-      for (let x = Math.floor(cx - rx); x <= Math.ceil(cx + rx); x++) {
-        const dx = (x + 0.5 - cx) / rx;
-        const dy = (y + 0.5 - cy) / ry;
-        if (dx * dx + dy * dy <= 1) this.set(x, y, c);
-      }
-    }
-  }
-
-  /** Paint a 1px outline around every opaque region (outside pixels only). */
-  outline(c: RGBA): void {
-    const edge: Array<[number, number]> = [];
-    for (let y = 0; y < this.h; y++) {
-      for (let x = 0; x < this.w; x++) {
-        if (this.opaque(x, y)) continue;
-        if (
-          this.opaque(x - 1, y) ||
-          this.opaque(x + 1, y) ||
-          this.opaque(x, y - 1) ||
-          this.opaque(x, y + 1)
-        ) {
-          edge.push([x, y]);
-        }
-      }
-    }
-    for (const [x, y] of edge) this.set(x, y, c);
-  }
-
-  /** Composite another canvas of the same size on top of this one. */
-  drawOver(top: Canvas): void {
-    for (let i = 0; i < top.data.length; i += 4) {
-      if (top.data[i + 3] === 0) continue;
-      const p = i / 4;
-      this.set(p % this.w, Math.floor(p / this.w), [
-        top.data[i],
-        top.data[i + 1],
-        top.data[i + 2],
-        top.data[i + 3],
-      ]);
-    }
-  }
-
-  save(file: string): void {
-    const png = new PNG({ width: this.w, height: this.h });
-    png.data.set(this.data);
-    fs.mkdirSync(path.dirname(file), { recursive: true });
-    fs.writeFileSync(file, PNG.sync.write(png));
-  }
-}
-
-/** mulberry32 */
-function rng(seed: number): () => number {
-  let a = seed >>> 0;
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
 
 // ── Floors (grayscale, 16×16, seamless) ─────────────────────
 
@@ -310,6 +199,16 @@ function grassClump(c: Canvas, cx: number, cy: number): void {
   leaf(cx, cy - 1.5, 2, 3.5, HEDGE[3]);
 }
 
+/** Tall-grass blades standing on one tile; leaves rise 8px above it, so a
+ *  character walking through is partly hidden as in the games. */
+function tallGrass(): Canvas {
+  const c = new Canvas(16, 24);
+  grassClump(c, 4, 11);
+  grassClump(c, 12, 11);
+  grassClump(c, 8, 17);
+  return c;
+}
+
 /** A pair of white 5th-gen flowers (petals around a yellow heart). */
 function flower(c: Canvas, x: number, y: number): void {
   const petal = hex('#f8f8e8');
@@ -397,40 +296,10 @@ const TERRACE_LIGHT = hex('#c0f8a0');
 /** 4×4 Bayer matrix, for the soft ordered dithering of the 5th-gen games. */
 const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map((v) => v / 16 - 0.5);
 
-/** Deterministic -1/0/1 jitter (worn path borders, irregular grass clumps). */
-const jitter = (i: number, salt: number): number =>
-  ((Math.imul(i + salt, 2654435761) >>> 29) % 3) - 1;
-
-/** Smooth 2D value noise in [0, 1]. */
-function valueNoise(seed: number): (x: number, y: number) => number {
-  const hash = (ix: number, iy: number): number => {
-    let h = Math.imul(ix, 374761393) ^ Math.imul(iy, 668265263) ^ seed;
-    h = Math.imul(h ^ (h >>> 13), 1274126177);
-    return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
-  };
-  const smooth = (t: number): number => t * t * (3 - 2 * t);
-  return (x, y) => {
-    const ix = Math.floor(x);
-    const iy = Math.floor(y);
-    const fx = smooth(x - ix);
-    const fy = smooth(y - iy);
-    const top = hash(ix, iy) * (1 - fx) + hash(ix + 1, iy) * fx;
-    const bottom = hash(ix, iy + 1) * (1 - fx) + hash(ix + 1, iy + 1) * fx;
-    return top * (1 - fy) + bottom * fy;
-  };
-}
-
 /** Pick a shade for value v in [0, 1], dithered at pixel (x, y). */
 function dithered(shades: RGBA[], v: number, x: number, y: number): RGBA {
   const t = v * (shades.length - 1) + BAYER[(y % 4) * 4 + (x % 4)] * 0.9;
   return shades[Math.max(0, Math.min(shades.length - 1, Math.round(t)))];
-}
-
-interface RouteShapes {
-  /** Signed distance (px) into the path: > 0 inside. */
-  pathDepth(x: number, y: number): number;
-  tallGrass: Array<[col: number, row: number, cols: number, rows: number]>;
-  terraces: Array<[col: number, row: number, cols: number, rows: number]>;
 }
 
 function paintRoute(cols: number, rows: number, shapes: RouteShapes): Canvas {
@@ -534,17 +403,8 @@ function paintRoute(cols: number, rows: number, shapes: RouteShapes): Canvas {
   }
 
   // Grass tufts and white flower pairs on open grass
-  const r = rng(77);
-  const open = (x: number, y: number): boolean =>
-    shapes.pathDepth(x, y) < -4 &&
-    !shapes.tallGrass.some(
-      ([tc, tr, tw, th]) =>
-        x >= tc * 16 - 4 && x < (tc + tw) * 16 + 4 && y >= tr * 16 - 4 && y < (tr + th) * 16 + 6,
-    );
-  for (let placed = 0, tries = 0; placed < 26 && tries < 2000; tries++) {
-    const x = 36 + Math.floor(r() * (w - 72));
-    const y = 36 + Math.floor(r() * (h - 72));
-    if (!open(x, y)) continue;
+  const decor = routeDecor();
+  for (const [x, y] of decor.tufts) {
     for (const [dx, dy, color] of [
       [0, 0, '#70b868'],
       [1, -1, '#70b868'],
@@ -556,15 +416,10 @@ function paintRoute(cols: number, rows: number, shapes: RouteShapes): Canvas {
     ] as const) {
       c.set(x + dx, y + dy, hex(color));
     }
-    placed++;
   }
-  for (let placed = 0, tries = 0; placed < 14 && tries < 2000; tries++) {
-    const x = 40 + Math.floor(r() * (w - 80));
-    const y = 40 + Math.floor(r() * (h - 80));
-    if (!open(x, y) || !open(x + 8, y + 6)) continue;
+  for (const [x, y] of decor.flowers) {
     flower(c, x, y);
     flower(c, x + 6, y + 4);
-    placed++;
   }
   return c;
 }
@@ -597,6 +452,15 @@ const furniture: FurnitureSpec[] = [
     footprintW: 1,
     footprintH: 1,
     backgroundTiles: 0,
+  },
+  {
+    id: 'TALL_GRASS',
+    name: 'Tall Grass',
+    category: 'decor',
+    canvas: tallGrass(),
+    footprintW: 1,
+    footprintH: 1,
+    backgroundTiles: 1,
   },
   {
     id: 'FLOWERS',
@@ -649,11 +513,8 @@ const furniture: FurnitureSpec[] = [
 // ── Default map: "Route 1" ──────────────────────────────────
 
 /** Bump to replace users' saved layouts with this map on their next load. */
-const ROUTE_LAYOUT_REVISION = 3;
-const ROUTE_BACKGROUND = 'route-1';
+const ROUTE_LAYOUT_REVISION = 4;
 const BACKGROUNDS_DIR = path.join(__dirname, '..', 'webview-ui', 'src', 'assets', 'maps');
-const COLS = 24;
-const ROWS = 18;
 const GRASS = 7;
 const PATH = 8;
 const TALL_GRASS = 9;
@@ -662,28 +523,6 @@ const FLOOR_COLORS: Record<number, { h: number; s: number; b: number; c: number 
   [GRASS]: { h: 98, s: 48, b: 4, c: 0 },
   [PATH]: { h: 36, s: 42, b: 10, c: 0 },
   [TALL_GRASS]: { h: 110, s: 52, b: -4, c: 10 },
-};
-
-const ROUTE_SHAPES: RouteShapes = {
-  pathDepth(x, y) {
-    // Main path winding north-south through the middle of the map
-    const cx = 192 + 10 * Math.sin(y / 46) + 4 * Math.sin(y / 13);
-    const main = 15 + jitter(y, 1) * 0.8 - Math.abs(x + 0.5 - cx);
-    // Branch west to the clearing, ending in a rounded cap
-    let branch = -Infinity;
-    if (x <= cx) {
-      const cy = 140 + 5 * Math.sin(x / 22);
-      const capX = 60;
-      const across = 12 + jitter(x, 7) * 0.8 - Math.abs(y + 0.5 - cy);
-      branch = x >= capX ? across : 12 - Math.hypot(x - capX, y + 0.5 - cy);
-    }
-    return Math.max(main, branch);
-  },
-  tallGrass: [
-    [15, 3, 6, 4],
-    [3, 12, 5, 3],
-  ],
-  terraces: [[14, 11, 8, 5]],
 };
 
 function routeLayout(): Record<string, unknown> {
@@ -724,6 +563,11 @@ function routeLayout(): Record<string, unknown> {
   for (let r = 2; r < ROWS - 2; r += 2) {
     place('TREE', 0, r);
     place('TREE', COLS - 2, r);
+  }
+
+  // Tall grass blades standing on every tile of each patch
+  for (const [c0, r0, w, h] of ROUTE_SHAPES.tallGrass) {
+    for (let r = r0; r < r0 + h; r++) for (let c = c0; c < c0 + w; c++) place('TALL_GRASS', c, r);
   }
 
   // Spots where working Pokémon stand

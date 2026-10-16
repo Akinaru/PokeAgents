@@ -9,17 +9,29 @@
  */
 import route1 from '../assets/maps/route-1.png?inline';
 
-const SOURCES: Record<string, string> = { 'route-1': route1 };
+const BUNDLED: Record<string, string> = { 'route-1': route1 };
+
+/** Backgrounds from external asset directories, overriding bundled ones by name. */
+let external: Record<string, string> = {};
 
 const images = new Map<string, HTMLImageElement>();
 
+/** Handle `mapBackgroundsLoaded` (name → base64 PNG). */
+export function setExternalMapBackgrounds(backgrounds: Record<string, string>): void {
+  external = Object.fromEntries(
+    Object.entries(backgrounds).map(([name, png]) => [name, `data:image/png;base64,${png}`]),
+  );
+  images.clear();
+}
+
 /** The decoded background image, or null when unnamed, unknown or still loading. */
 export function getMapBackground(name: string | undefined): HTMLImageElement | null {
-  if (!name || !(name in SOURCES)) return null;
+  const source = name ? (external[name] ?? BUNDLED[name]) : undefined;
+  if (!name || !source) return null;
   let image = images.get(name);
   if (!image) {
     image = new Image();
-    image.src = SOURCES[name];
+    image.src = source;
     images.set(name, image);
   }
   return image.complete && image.naturalWidth > 0 ? image : null;

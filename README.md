@@ -39,6 +39,13 @@
 > - Pokémon is © Nintendo / Creatures Inc. / GAME FREAK inc.; this is an unofficial fan project.
 >
 > To regenerate the bundled data, run `npx tsx scripts/generate-pokedex.ts`. To regenerate the route tileset and map, run `npx tsx scripts/generate-route-assets.ts`.
+>
+> **Optional Black/White look (local only):**
+>
+> 1. Put the Black/White overworld map textures (`matrix1_*.png`) in `tmp/bw/matrix1/`. That folder is git-ignored.
+> 2. Run `npx tsx scripts/build-bw-pack.ts`.
+>
+> The script builds an asset pack in `~/.aagent/packs/pokemon-bw` and enables it as an external asset directory. Game assets never enter this repository.
 
 Pixel Agents turns the AI coding agents running in your terminals into animated pixel-art characters working in a tiny office. They walk to their desks, sit down, type when they're editing files, read when they're searching, and flag you visually when they're stuck waiting for input.
 

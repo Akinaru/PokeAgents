@@ -41,6 +41,7 @@ import {
   watchLayoutFile,
   writeLayoutToFile,
 } from '../../server/src/layoutPersistence.js';
+import { loadAllMapBackgrounds } from '../../server/src/mapBackgrounds.js';
 import { PathSet } from '../../server/src/pathKey.js';
 import { readPokedex, recordPokemonSeen } from '../../server/src/pokedexPersistence.js';
 import {
@@ -819,6 +820,7 @@ export class PixelAgentsViewProvider implements vscode.WebviewViewProvider {
               console.log('[Extension] ✅ Assets loaded, sending to webview');
               sendAssetsToWebview(this.webview, assets);
             }
+            this.sendMapBackgrounds();
           } catch (err) {
             console.error('[Extension] ❌ Error loading assets:', err);
           }
@@ -1014,9 +1016,18 @@ export class PixelAgentsViewProvider implements vscode.WebviewViewProvider {
       if (assets) {
         sendAssetsToWebview(this.webview, assets);
       }
+      this.sendMapBackgrounds();
     } catch (err) {
       console.error('[Extension] Error reloading furniture assets:', err);
     }
+  }
+
+  /** Map backgrounds from external asset directories (bundled ones live in the webview). */
+  private sendMapBackgrounds(): void {
+    this.webview?.postMessage({
+      type: 'mapBackgroundsLoaded',
+      backgrounds: loadAllMapBackgrounds(readConfig().externalAssetDirectories),
+    });
   }
 
   private async reloadAndSendCharacters(): Promise<void> {

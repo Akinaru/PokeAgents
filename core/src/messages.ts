@@ -31,6 +31,7 @@ export type ServerMessage =
   | PetSpritesLoaded
   | PokemonSpritesLoaded
   | PokedexLoaded
+  | MapBackgroundsLoaded
   | FloorTilesLoaded
   | WallTilesLoaded
   | CarpetTilesLoaded
@@ -275,6 +276,11 @@ export interface PokedexLoaded {
   type: 'pokedexLoaded';
   seen: number[];
   shiny: number[];
+}
+
+export interface MapBackgroundsLoaded {
+  type: 'mapBackgroundsLoaded';
+  backgrounds: Record<string, string>;
 }
 
 export interface FloorTilesLoaded {

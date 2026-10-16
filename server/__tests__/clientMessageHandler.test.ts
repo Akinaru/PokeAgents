@@ -378,6 +378,7 @@ describe('clientMessageHandler: areas + carpet wire ordering', () => {
         wallTiles: [[[['#aabbcc']]]],
         carpetTiles: [[[['#112233']]]],
         furniture: null,
+        mapBackgrounds: {},
         defaultLayout: null,
       };
       /* eslint-enable pixel-agents/no-inline-colors */
@@ -402,6 +403,7 @@ describe('clientMessageHandler: areas + carpet wire ordering', () => {
         wallTiles: null,
         carpetTiles: null,
         furniture: null,
+        mapBackgrounds: {},
         defaultLayout: null,
       };
       ctx = freshCtx(cache);
@@ -576,6 +578,7 @@ describe('clientMessageHandler: saveAgentSeats palette sync', () => {
       wallTiles: null,
       carpetTiles: null,
       furniture: null,
+      mapBackgrounds: {},
       defaultLayout: null,
     };
     ctx = freshCtx(cache);

@@ -13,6 +13,7 @@ import { setGhostHeadlessAgents as setRendererGhostHeadlessAgents } from '../off
 import { setFloorSprites } from '../office/floorTiles.js';
 import { buildDynamicCatalog } from '../office/layout/furnitureCatalog.js';
 import { migrateLayoutColors } from '../office/layout/layoutSerializer.js';
+import { setExternalMapBackgrounds } from '../office/mapBackgrounds.js';
 import { setCarpetSprites } from '../office/sprites/carpetTiles.js';
 import { setPetTemplates } from '../office/sprites/petSpriteData.js';
 import { setCharacterTemplates } from '../office/sprites/spriteData.js';
@@ -619,6 +620,8 @@ export function useExtensionMessages(
         }>;
         console.log(`[Webview] Received ${characters.length} pre-colored character sprites`);
         setCharacterTemplates(characters);
+      } else if (msg.type === 'mapBackgroundsLoaded') {
+        setExternalMapBackgrounds(msg.backgrounds as Record<string, string>);
       } else if (msg.type === 'pokedexLoaded') {
         onPokedexLoaded(msg as unknown as PokedexLoaded);
       } else if (msg.type === 'pokemonSpritesLoaded') {

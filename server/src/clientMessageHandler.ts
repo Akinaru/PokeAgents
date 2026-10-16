@@ -47,6 +47,8 @@ export interface AssetCache {
   wallTiles: string[][][][] | null;
   carpetTiles: string[][][][] | null;
   furniture: LoadedAssets | null;
+  /** name → base64 PNG, from external asset directories (see mapBackgrounds.ts). */
+  mapBackgrounds: Record<string, string>;
   defaultLayout: Record<string, unknown> | null;
 }
 
@@ -416,6 +418,7 @@ function handleWebviewReady(send: WsSend, ctx: ClientMessageContext): void {
         sprites: Object.fromEntries(cache.furniture.sprites),
       });
     }
+    send({ type: 'mapBackgroundsLoaded', backgrounds: cache.mapBackgrounds });
   }
 
   // 3. Layout is sent AFTER existingAgents — see step 7 below. The webview

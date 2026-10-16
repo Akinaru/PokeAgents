@@ -108,6 +108,7 @@ components:
         - $ref: '#/components/schemas/PetSpritesLoaded'
         - $ref: '#/components/schemas/PokemonSpritesLoaded'
         - $ref: '#/components/schemas/PokedexLoaded'
+        - $ref: '#/components/schemas/MapBackgroundsLoaded'
         - $ref: '#/components/schemas/FloorTilesLoaded'
         - $ref: '#/components/schemas/WallTilesLoaded'
         - $ref: '#/components/schemas/CarpetTilesLoaded'
@@ -527,6 +528,22 @@ components:
             $ref: '#/components/schemas/PokemonAnimSheet'
         error:
           type: string
+
+    MapBackgroundsLoaded:
+      description: |
+        Painted map backgrounds from external asset directories (name to base64
+        PNG). They replace the webview's bundled background of the same name.
+        Sent after furnitureAssetsLoaded and again when the directories change.
+      type: object
+      additionalProperties: false
+      required: [type, backgrounds]
+      properties:
+        type:
+          const: mapBackgroundsLoaded
+        backgrounds:
+          type: object
+          additionalProperties:
+            type: string
 
     PokedexLoaded:
       description: Reply to `requestPokedex`, listing every species (National Dex number) ever seen.
