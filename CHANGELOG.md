@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.4.2
+
+### Features
+
+- **Poké Ball panel icon** — The PokeAgents view container now shows a Poké Ball instead of the generic window icon.
+- **Speaker dialogue box** — The bottom dialogue box names the Pokémon and its project on a name plate and shows its animated portrait. It now fits inside narrow panels instead of running off screen.
+- **Full Pokédex with rarity** — Every species is listed, unmet ones as silhouettes. Filters for seen, missing, legendaries and shinies; each species shows its rarity tier, its odds per agent and whether its shiny was obtained.
+
+### Docs
+
+- **English README by default**, with French, Spanish, German, Italian, Brazilian Portuguese, Japanese and Simplified Chinese translations.
+
 ## v1.4.1
 
 ### Features
