@@ -12,7 +12,7 @@ import {
   writeConfig,
 } from './configPersistence.js';
 import { HUE_SHIFT_MAX_DEG, PALETTE_COUNT } from './constants.js';
-import { readLayoutFromFile, writeLayoutToFile } from './layoutPersistence.js';
+import { loadLayout, writeLayoutToFile } from './layoutPersistence.js';
 import {
   agentPokemonSeed,
   isValidPokemonRequest,
@@ -524,8 +524,13 @@ function handleWebviewReady(send: WsSend, ctx: ClientMessageContext): void {
 
   // 7. Layout last (see step 3): flushes the webview's buffered existingAgents
   // into characters once seats are rebuilt.
-  const savedLayout = readLayoutFromFile();
-  send({ type: 'layoutLoaded', layout: savedLayout ?? cache?.defaultLayout ?? null });
+  // Same revision check as VS Code: a newer bundled default replaces the saved layout.
+  const result = loadLayout(cache?.defaultLayout);
+  send({
+    type: 'layoutLoaded',
+    layout: result?.layout ?? null,
+    wasReset: result?.wasReset ?? false,
+  });
 
   // 8. Agent state, AFTER layoutLoaded -- the characters they target only
   // exist once the layout flush creates them. Without this a reconnecting

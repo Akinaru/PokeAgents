@@ -16,14 +16,7 @@ import { POKEMON_ANIMS } from '../core/src/pokemon/constants.js';
 
 const TRACKER_URL = 'https://raw.githubusercontent.com/PMDCollab/SpriteCollab/master/tracker.json';
 const POKEAPI_GRAPHQL_URL = 'https://graphql.pokeapi.co/v1beta2';
-const OUT_FILE = path.join(
-  import.meta.dirname,
-  '..',
-  'webview-ui',
-  'src',
-  'pokemon',
-  'pokedex.json',
-);
+const OUT_FILE = path.join(__dirname, '..', 'webview-ui', 'src', 'pokemon', 'pokedex.json');
 
 interface TrackerNode {
   sprite_files: Record<string, boolean>;
