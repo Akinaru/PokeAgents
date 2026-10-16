@@ -20,6 +20,7 @@ import { isReadingTool } from '../office/engine/characters.js';
 import type { Character, SpriteData } from '../office/types.js';
 import { CharacterState, Direction } from '../office/types.js';
 import { transport } from '../transport/index.js';
+import { dailySeed } from './daily.js';
 import { startPokemonEffect } from './effects.js';
 import { emitPokemonMoment } from './moments.js';
 import { markPokemonSeen } from './pokedex.js';
@@ -211,22 +212,26 @@ function pokemonFrame(
   return sheetFrame(anims.Idle, ch.dir, 0);
 }
 
-/** Highest stage each character reached, so a compacted context never devolves it. */
-const reachedStage = new WeakMap<Character, number>();
+/** Highest stage each character reached with today's Pokémon, so a compacted
+ *  context never devolves it. A new day (new seed) starts over. */
+const reachedStage = new WeakMap<Character, { seed: number; stage: number }>();
 
 /** The form a character shows right now, or null when it has no Pokémon seed. */
 export function characterPokemon(ch: Character): PokemonForm | null {
   if (ch.seed === undefined) return null;
-  const rolled = rollPokemon(ch.seed);
+  // A new Pokémon every day: the session seed is mixed with today's date
+  const seed = dailySeed(ch.seed);
+  const rolled = rollPokemon(seed);
   // Sub-agents are the base form of their parent's line.
   if (ch.isSubagent) return pokemonForm(rolled, 0);
   const ratio = ch.maxContextTokens > 0 ? ch.contextTokens / ch.maxContextTokens : 0;
-  const previous = reachedStage.get(ch);
+  const reached = reachedStage.get(ch);
+  const previous = reached?.seed === seed ? reached.stage : undefined;
   const stage = Math.max(previous ?? 0, evolutionStage(rolled, ratio));
   const form = pokemonForm(rolled, stage);
   if (previous === undefined || stage > previous) {
-    reachedStage.set(ch, stage);
-    markPokemonSeen(form, ch.folderName, ch.seed);
+    reachedStage.set(ch, { seed, stage });
+    markPokemonSeen(form, ch.folderName, seed);
     if (previous !== undefined) {
       startPokemonEffect(ch, 'evolve');
       const from = pokemonForm(rolled, previous);

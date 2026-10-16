@@ -25,7 +25,7 @@
 
 > **aAgent** is a personal fork of Pixel Agents with a Pokémon theme:
 >
-> - Every Claude Code session appears as a random wild Pokémon, weighted by capture rate (legendaries are rare), with a 1/64 shiny chance.
+> - Every Claude Code session appears as a random wild Pokémon, weighted by capture rate (legendaries are rare), with a 1/64 shiny chance. Each agent meets a new Pokémon every day.
 > - The Pokémon evolves as its session's context window fills up.
 > - It plays its cry when its agent finishes a turn.
 > - The office is replaced by a route map.
