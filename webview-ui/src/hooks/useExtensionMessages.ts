@@ -514,7 +514,7 @@ export function useExtensionMessages(
               });
             }
           }
-          playDoneSound(ch ? characterPokemon(ch)?.dex : undefined);
+          playDoneSound();
         }
       } else if (msg.type === 'agentToolPermission') {
         const id = msg.id as number;

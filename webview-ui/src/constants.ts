@@ -167,21 +167,27 @@ export const VISUAL_COLOR_PICKER_SWATCH_PX = 22;
 /** Gap (px) between the collapsed trigger and the expanded popup panel. */
 export const VISUAL_COLOR_PICKER_POPUP_GAP_PX = 6;
 
-// ── Notification Sound (done: ascending chime) ─────────────
-export const NOTIFICATION_NOTE_1_HZ = 659.25; // E5
-export const NOTIFICATION_NOTE_2_HZ = 1318.51; // E6 (octave up)
-export const NOTIFICATION_NOTE_1_START_SEC = 0;
-export const NOTIFICATION_NOTE_2_START_SEC = 0.1;
-export const NOTIFICATION_NOTE_DURATION_SEC = 0.18;
-export const NOTIFICATION_VOLUME = 0.14;
-
-// ── Permission Sound (attention: descending double tap) ────
-export const PERMISSION_NOTE_1_HZ = 880; // A5
-export const PERMISSION_NOTE_2_HZ = 659.25; // E5 (down a fourth)
-export const PERMISSION_NOTE_1_START_SEC = 0;
-export const PERMISSION_NOTE_2_START_SEC = 0.12;
-export const PERMISSION_NOTE_DURATION_SEC = 0.15;
-export const PERMISSION_VOLUME = 0.12;
+// ── Sounds (Black/White menu blips: short, quiet square waves) ──
+/** [frequency Hz, start s, duration s] */
+export type Blip = readonly [number, number, number];
+export const BLIP_VOLUME = 0.035;
+/** Turn finished: a bright two-step blip, like confirming in a menu. */
+export const DONE_BLIPS: readonly Blip[] = [
+  [1318.5, 0, 0.07], // E6
+  [1760, 0.08, 0.12], // A6
+];
+/** Permission request: the cursor's double tap. */
+export const PERMISSION_BLIPS: readonly Blip[] = [
+  [988, 0, 0.05], // B5
+  [988, 0.09, 0.05],
+];
+/** Evolution or shiny: a quick rising arpeggio. */
+export const EVOLVE_BLIPS: readonly Blip[] = [
+  [784, 0, 0.1], // G5
+  [988, 0.07, 0.1],
+  [1175, 0.14, 0.1],
+  [1568, 0.21, 0.12],
+];
 
 // ── Furniture Animation ─────────────────────────────────────
 export const FURNITURE_ANIM_INTERVAL_SEC = 0.2;
@@ -313,10 +319,6 @@ export const POKEMON_EVOLVE_EFFECT_SEC = 1.6;
 /** Sparkles shown when a shiny Pokémon appears. */
 export const POKEMON_SHINY_EFFECT_SEC = 2;
 export const POKEMON_SPARKLE_COLOR = '#FFF6A8';
-/** Cries of the current form play when an agent finishes its turn. */
-export const POKEMON_CRY_URL =
-  'https://raw.githubusercontent.com/PokeAPI/cries/main/cries/pokemon/latest';
-export const POKEMON_CRY_VOLUME = 0.25;
 /** Front sprites shown in the Pokédex (static PNGs, ~1 KB each). */
 export const POKEMON_ICON_URL =
   'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white';

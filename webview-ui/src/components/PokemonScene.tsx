@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import { POKEMON_ICON_URL, POKEMON_SCENE_SEC } from '../constants.js';
+import { playEvolutionSound } from '../notificationSound.js';
 import type { PokemonMoment } from '../pokemon/moments.js';
 import { onPokemonMoment } from '../pokemon/moments.js';
 
@@ -29,6 +30,7 @@ export function PokemonScene() {
   const scene = queue[0];
   useEffect(() => {
     if (!scene) return;
+    void playEvolutionSound();
     const start = performance.now();
     setElapsed(0);
     const timer = setInterval(() => {
