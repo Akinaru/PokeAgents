@@ -1,7 +1,21 @@
 {
   "name": "aagent",
   "displayName": "aAgent",
-  "description": "Pixel art office where your Claude Code agents come to life as animated characters",
+  "description": "Your Claude Code agents become pixel-art creatures working on a route. Unofficial, non-commercial fan project, not affiliated with Nintendo, The Pokémon Company or Anthropic.",
+  "author": {
+    "name": "Maxime Gallotta"
+  },
+  "homepage": "https://github.com/Akinaru/aAgent#readme",
+  "bugs": {
+    "url": "https://github.com/Akinaru/aAgent/issues"
+  },
+  "keywords": [
+    "claude",
+    "claude code",
+    "agents",
+    "pixel art",
+    "ai"
+  ],
   "version": "1.4.1",
   "publisher": "akinaru",
   "repository": {
@@ -34,6 +48,7 @@
   "files": [
     "CHANGELOG.md",
     "LICENSE",
+    "THIRD_PARTY_NOTICES.md",
     "dist/cli.js",
     "dist/extension.js",
     "dist/hooks/claude-hook.js",

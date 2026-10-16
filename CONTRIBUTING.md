@@ -144,7 +144,7 @@ The project uses a pixel art aesthetic. All overlays should use:
 - Sharp corners (`border-radius: 0`)
 - Solid backgrounds and `2px solid` borders
 - Hard offset shadows (`2px 2px 0px`, no blur) — use `var(--pixel-shadow)`
-- The FS Pixel Sans font (loaded in `index.css`)
+- The Pixelify Sans font (loaded in `pokemon/bw.css`)
 
 These conventions are enforced by custom ESLint rules (`eslint-rules/pixel-agents-rules.mjs`):
 
@@ -152,7 +152,7 @@ These conventions are enforced by custom ESLint rules (`eslint-rules/pixel-agent
 | ------------------ | ------------------- | ----------------------------------------------------------- |
 | `no-inline-colors` | Extension + Webview | No hex/rgb/rgba/hsl/hsla literals outside `constants.ts`    |
 | `pixel-shadow`     | Webview only        | Box shadows must use `var(--pixel-shadow)` or `2px 2px 0px` |
-| `pixel-font`       | Webview only        | Font family must reference FS Pixel Sans                    |
+| `pixel-font`       | Webview only        | Font family must reference Pixelify Sans                    |
 
 These rules are set to `error` and will block your PR if violated.
 

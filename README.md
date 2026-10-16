@@ -1,261 +1,211 @@
-<h1 align="center">
-  <a href="https://github.com/pixel-agents-hq/pixel-agents/discussions">
-    <img src="webview-ui/public/banner.png" alt="Pixel Agents">
-  </a>
-</h1>
+<h1 align="center">aAgent</h1>
 
-<h2 align="center">The most playful way to orchestrate your agents</h2>
-
-<div align="center">
-
-[![version](https://img.shields.io/endpoint?url=https%3A%2F%2Fgist.githubusercontent.com%2Fpablodelucca%2F3cd28398fa4a2c0a636e1d51d41aee39%2Fraw%2Fversion.json)](https://github.com/pixel-agents-hq/pixel-agents/releases)
-[![marketplaces](https://img.shields.io/endpoint?url=https%3A%2F%2Fgist.githubusercontent.com%2Fpablodelucca%2F3cd28398fa4a2c0a636e1d51d41aee39%2Fraw%2Finstalls.json)](https://marketplace.visualstudio.com/items?itemName=pablodelucca.pixel-agents)
-[![npm downloads](https://img.shields.io/endpoint?url=https%3A%2F%2Fgist.githubusercontent.com%2Fpablodelucca%2F3cd28398fa4a2c0a636e1d51d41aee39%2Fraw%2Fnpm-downloads.json)](https://www.npmjs.com/package/pixel-agents)
-[![stars](https://img.shields.io/github/stars/pixel-agents-hq/pixel-agents?logo=github&color=0183ff&style=flat)](https://github.com/pixel-agents-hq/pixel-agents/stargazers)
-[![license](https://img.shields.io/github/license/pixel-agents-hq/pixel-agents?color=0183ff&style=flat)](https://github.com/pixel-agents-hq/pixel-agents/blob/main/LICENSE)
-[![discord](https://img.shields.io/badge/Discord-Join-5865F2?logo=discord&logoColor=white&style=flat)](https://discord.gg/Yk7jXebv9H)
-
-</div>
-
-<div align="center">
-<a href="https://marketplace.visualstudio.com/items?itemName=pablodelucca.pixel-agents">🛒 VS Code Marketplace</a> • <a href="https://open-vsx.org/extension/pablodelucca/pixel-agents">🛒 Open VSX</a> • <a href="https://www.npmjs.com/package/pixel-agents">📦 npm</a> • <a href="https://discord.gg/Yk7jXebv9H">👾 Discord</a> • <a href="https://github.com/pixel-agents-hq/pixel-agents/discussions">💬 Discussions</a> • <a href="CONTRIBUTING.md">🤝 Contributing</a> • <a href="CHANGELOG.md">📋 Changelog</a>
-</div>
-
-<br/>
-
-> **aAgent** is a personal fork of Pixel Agents with a Pokémon theme:
->
-> - Every Claude Code session appears as a random wild Pokémon, weighted by capture rate (legendaries are rare), with a 1/64 shiny chance. Each agent meets a new Pokémon every day.
-> - The Pokémon evolves as its session's context window fills up.
-> - It plays its cry when its agent finishes a turn.
-> - The office is replaced by a route map.
-> - A Pokédex keeps every species you've met.
->
-> **Credits:**
->
-> - Overworld sprites come from the [PMDCollab SpriteCollab](https://github.com/PMDCollab/SpriteCollab) project. They are licensed under [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/), so this fork is non-commercial.
-> - Species data, cries and Pokédex icons come from [PokeAPI](https://pokeapi.co/).
-> - Sprites are downloaded at runtime and are not stored in this repository.
-> - Pokémon is © Nintendo / Creatures Inc. / GAME FREAK inc.; this is an unofficial fan project.
->
-> To regenerate the bundled data, run `npx tsx scripts/generate-pokedex.ts`. To regenerate the route tileset and map, run `npx tsx scripts/generate-route-assets.ts`.
->
-> **Optional Black/White look (local only):**
->
-> 1. Put the Black/White overworld map textures (`matrix1_*.png`) in `tmp/bw/matrix1/`. That folder is git-ignored.
-> 2. Run `npx tsx scripts/build-bw-pack.ts`.
->
-> The script builds an asset pack in `~/.aagent/packs/pokemon-bw` and enables it as an external asset directory. Game assets never enter this repository.
-
-Pixel Agents turns the AI coding agents running in your terminals into animated pixel-art characters working in a tiny office. They walk to their desks, sit down, type when they're editing files, read when they're searching, and flag you visually when they're stuck waiting for input.
-
-It ships in two forms from the same codebase:
-
-- **VS Code extension** — [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=pablodelucca.pixel-agents) and [Open VSX](https://open-vsx.org/extension/pablodelucca/pixel-agents). Agents launch into VS Code terminals; characters render in the panel area.
-- **Standalone CLI** — `npx pixel-agents` starts a local server and serves the same office as a browser app, useful for tmux, remote, and non-VS Code workflows.
-
-The architecture is fully agent-agnostic and editor-agnostic: a typed `HookProvider` interface defines the integration boundary so adding a new AI tool is a single subdirectory of code. Claude Code is the reference implementation today; Codex, Gemini, Cursor, and others are on the roadmap.
-
-![Pixel Agents screenshot](webview-ui/public/office.png)
-
-## Features
-
-- **One agent, one character** — every Claude Code terminal gets its own animated character
-- **Live activity tracking** — characters animate based on what the agent is actually doing (writing, reading, running commands)
-- **Office layout editor** — design your office with floors, walls, and furniture using a built-in editor
-- **Speech bubbles** — visual indicators when an agent is waiting for input or awaiting permission
-- **Sound notifications** — optional chimes when an agent finishes its turn or requests permission
-- **Sub-agents and Agent Teams** — see ephemeral sub-agents and persistent Claude teammates as separate characters, including team roles and lifecycle changes
-- **Persistent layouts** — your office design is saved and shared across VS Code windows
-- **Shared layout and assets** — import/export layouts and load external character, pet, and furniture packs
-- **Areas** — paint named areas onto the office, map workspace folders to them, and new agents sit inside the areas mapped to their folder
-- **Diverse characters** — 6 diverse characters. These are based on the amazing work of [JIK-A-4, Metro City](https://jik-a-4.itch.io/metrocity-free-topdown-character-pack).
+<p align="center"><strong>Vos agents Claude Code deviennent des créatures en pixel art qui travaillent sur une route, façon jeux DS.</strong></p>
 
 <p align="center">
-  <img src="webview-ui/public/characters.png" alt="Pixel Agents characters" width="320" height="72" style="image-rendering: pixelated;">
+  <a href="#installation">Installation</a> •
+  <a href="#prise-en-main">Prise en main</a> •
+  <a href="#ce-que-vous-voyez">Ce que vous voyez</a> •
+  <a href="#réglages">Réglages</a> •
+  <a href="#développement">Développement</a> •
+  <a href="#crédits-et-mentions-légales">Crédits et mentions légales</a>
 </p>
 
-## Where This Is Going
+<p align="center">
+  <img src="docs/images/overview.png" alt="La route d'aAgent avec trois agents au travail et des créatures sauvages" width="900">
+</p>
 
-The vision is: play a game, build a product. Two goals follow from it: to build a familiar, intuitive interface for running and orchestrating a lot of agents; and to make the hours you spend doing it feel less like administration and more like play.
+> **Projet de fan non officiel.** aAgent n'est ni affilié, ni approuvé, ni sponsorisé par Nintendo, Creatures Inc., GAME FREAK inc. ou The Pokémon Company, ni par Anthropic. Pokémon et les noms des personnages sont des marques de leurs propriétaires respectifs. Le dépôt ne contient aucune image tirée des jeux. Voir [Crédits et mentions légales](#crédits-et-mentions-légales).
 
-Roughly three stages get there:
+## Qu'est-ce que c'est ?
 
-1. **Everywhere, with everything.** Today it's Claude Code in VS Code or the browser. It should be whatever agent you run, wherever you work. A new CLI is a subdirectory, not a rewrite — this is where help is most useful right now.
-2. **Actually a game.** Health bars for rate limits and token budgets. Scores for whatever you care about. Furniture that _does_ things. Offices you open like save files, one per project.
-3. **Expand the orchestration frontier.** Orchestrator characters. Form a team by dragging a box around them. Hand work between agents. Point them at a board and let them pick up tasks themselves.
+aAgent est une extension VS Code (et un petit serveur autonome) qui affiche chaque session [Claude Code](https://claude.com/claude-code) comme une créature sur une route en pixel art :
 
-Most of this is still ahead. See [Issues](https://github.com/pixel-agents-hq/pixel-agents/issues) and [Discussions](https://github.com/pixel-agents-hq/pixel-agents/discussions) for what's open, and [CONTRIBUTING.md](CONTRIBUTING.md) to jump in.
+- **Chaque agent a son Pokémon**, tiré au sort et différent chaque jour. Les espèces rares le sont aussi ici, et un agent sur 64 est chromatique.
+- **Il évolue quand son contexte se remplit** : première évolution à 30 % du contexte, seconde à 60 %.
+- **Il se déplace selon ce qu'il fait** : il lit le panneau de la route, fouille les hautes herbes, coupe un arbre ou casse un rocher.
+- **Il dort quand il attend.** Vous voyez d'un coup d'œil qui travaille, qui a fini et qui attend votre réponse.
+- **Un clic ouvre son écran de combat**, avec un résumé de sa session : contexte, outils utilisés, journal et statistiques.
+- **Des créatures sauvages** se promènent sur la route et viennent parfois voir vos agents.
 
-## Requirements
+aAgent est un fork de [Pixel Agents](https://github.com/pixel-agents-hq/pixel-agents) (licence MIT), qui affichait les agents dans un bureau.
 
-- [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code) installed and configured
-- **VS Code extension:** VS Code 1.105.0 or later
-- **Standalone CLI:** Node.js 20 or later
-- Windows, Linux, or macOS
+## Installation
 
-## Getting Started
+### Prérequis
 
-### VS Code extension
+- **VS Code 1.105** ou plus récent.
+- **Claude Code** installé et connecté : `npm install -g @anthropic-ai/claude-code`, puis `claude` une première fois.
+- **Node.js 20** ou plus récent, seulement pour installer depuis les sources ou utiliser le serveur autonome.
+- Une **connexion Internet** : les sprites des créatures sont téléchargés à la première utilisation, puis gardés en cache dans `~/.aagent/pokemon`.
 
-1. Install Pixel Agents from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=pablodelucca.pixel-agents) or [Open VSX](https://open-vsx.org/extension/pablodelucca/pixel-agents).
-2. Open the **Pixel Agents** panel beside the terminal.
-3. Click **+ Agent** to launch Claude Code. In a multi-root workspace, select the folder first.
+### Option 1 — Depuis un fichier `.vsix` (recommandé)
 
-To use Claude with `--dangerously-skip-permissions`, hover over **+ Agent** to find the **Skip permissions mode** button. Only use this when you accept the security implications.
+1. Téléchargez le dernier `aagent-x.y.z.vsix` dans les [Releases GitHub](https://github.com/Akinaru/aAgent/releases).
+2. Installez-le :
+   ```bash
+   code --install-extension aagent-x.y.z.vsix
+   ```
+   Ou dans VS Code : vue **Extensions** → menu **⋯** → **Install from VSIX…**
+3. Rechargez la fenêtre si VS Code vous le demande.
 
-Pixel Agents also detects Claude sessions started outside the extension. Turn on **Settings → Watch All Sessions** to include sessions from other workspaces.
-
-### Standalone CLI
-
-Run Pixel Agents from the workspace whose Claude sessions you want to see:
-
-```bash
-cd /path/to/your/project
-npx pixel-agents
-```
-
-The CLI chooses a free local port and prints the URL. Standalone does not launch Claude for you; start Claude Code in a terminal for the same workspace. To install the command globally instead:
+### Option 2 — Depuis les sources
 
 ```bash
-npm install --global pixel-agents
-pixel-agents
-```
-
-Use a fixed address or port when needed:
-
-```bash
-pixel-agents --port 3100
-pixel-agents --host 127.0.0.1 --port 3100
-pixel-agents --help
-```
-
-The default bind address is `127.0.0.1`. Binding to `0.0.0.0` exposes the UI and WebSocket to the local network; do this only on a trusted network.
-
-Open the URL the CLI prints - it carries a `?token=` for this session. Any browser can watch the office without it, but installing or removing hooks (which edits your agent tool's own settings file, like the `~/.claude/settings.json`) is only offered to a session that has the token, so an untokened client on the network cannot approve it. Open the bare address instead and the hooks toggle in Settings is refused, and reports the actual install state rather than appearing to work.
-
-Treat that URL as a secret: the token is a bearer capability, not proof of being local. Whoever holds it can approve the hook install from anywhere the server is reachable — so don't paste the URL into a shared channel, and note that it also lands in your browser history and (unredacted) in the server's own request log.
-
-Pass `--no-terminal` to disable the embedded terminal — watch agents without launching or attaching to them from the browser.
-
-### Running the extension and standalone together
-
-The extension and standalone CLI can run at the same time. Each server registers under `~/.pixel-agents/servers/`; the hook script sends events to all active registrations. VS Code and standalone keep separate agents, seats, and settings while using the shared office layout.
-
-Stop a standalone server with **Ctrl+C**. It removes only its own registration.
-
-## Customizing the Office
-
-Click **Layout** to edit the office:
-
-- Paint floor patterns and walls, with color and contrast controls.
-- Place, rotate, recolor, select, and remove furniture.
-- Paint auto-tiling carpets and customize their main and accent colors.
-- Add animated pets; click a pet in the office to interact with it.
-- Create named **Areas**, paint their tiles, and assign workspace folders to them.
-- Undo/redo changes, then import or export the complete layout as JSON.
-
-Layouts can grow to 64×64 tiles by clicking the ghost border outside the current grid.
-
-### Office assets
-
-Bundled furniture, floors, walls, carpets, characters, and pets live under `webview-ui/public/assets/`. Furniture manifests describe sprites, rotation groups, state groups, and animation frames.
-
-Use **Settings → Add Asset Directory** to load external characters, pets, and furniture. See [docs/external-assets.md](docs/external-assets.md) for furniture directory structure and manifest details. The visual asset manager at `scripts/asset-manager.html` helps create furniture manifests.
-
-## How It Works
-
-Pixel Agents uses two Claude Code detection paths:
-
-- **Hooks mode** (default) — a hook script receives Claude events such as `SessionStart`, `PreToolUse`, `PermissionRequest`, and `Stop`. It discovers active Pixel Agents servers and sends authenticated events to each one.
-- **Heuristic mode** (fallback) — when hooks are unavailable, the runtime infers agent status by scanning Claude's JSONL session transcripts under `~/.claude/projects/`. Transcripts are also read in hooks mode for details not present in an event.
-
-The Claude provider normalizes both sources into a shared `AgentEvent` model. `AgentRuntime` updates the central state store, and the active transport sends typed messages to the React webview. The office renders through Canvas 2D with pathfinding and character state machines.
-
-Pixel Agents does not modify Claude Code. Its hook configuration and persistent data live under `~/.claude/` and `~/.pixel-agents/` respectively.
-
-### Architecture
-
-- **`core/`** — provider, adapter, transport, schema, and AsyncAPI message contracts with no runtime side effects.
-- **`server/`** — shared Fastify server, agent runtime, persistence, Claude provider, transcript scanning, and standalone CLI.
-- **`adapters/vscode/`** — the VS Code adapter: terminal, persistence, and webview bridge.
-- **`webview-ui/`** — React 19, Vite, Canvas 2D, and adapter-specific transports for VS Code and browser WebSocket clients.
-
-The extension and CLI are bundled with esbuild; the webview is built with Vite. Unit tests use Vitest and Node's test runner, and end-to-end coverage uses Playwright against VS Code and standalone.
-
-## Development
-
-```bash
-git clone https://github.com/pixel-agents-hq/pixel-agents.git
-cd pixel-agents
+git clone https://github.com/Akinaru/aAgent.git
+cd aAgent
 npm install
-npm run build
+npm run package                 # build de production
+npx @vscode/vsce package        # crée aagent-x.y.z.vsix
+code --install-extension aagent-*.vsix
 ```
 
-Press **F5** in VS Code to launch the Extension Development Host. To run the standalone bundle built from source:
+Pour essayer sans installer : ouvrez le dossier dans VS Code et appuyez sur **F5**. Une fenêtre « Extension Development Host » s'ouvre avec aAgent chargé.
+
+### Option 3 — Serveur autonome (navigateur)
+
+Pour suivre vos agents hors de VS Code (tmux, terminal seul, autre éditeur) :
 
 ```bash
-node dist/cli.js
+npm install && npm run compile
+node dist/cli.js --port 3100
 ```
 
-Common checks:
+Ouvrez l'adresse affichée (`http://127.0.0.1:3100/?token=…`). **Gardez cette adresse pour vous** : le jeton qu'elle contient permet de modifier vos réglages Claude Code.
+
+## Prise en main
+
+1. Ouvrez la palette de commandes (`Cmd+Shift+P` sur macOS, `Ctrl+Shift+P` ailleurs) et lancez **aAgent: Show Panel**. Le panneau s'ouvre en bas de VS Code.
+2. Au premier lancement, un guide vous présente l'interface. Il vous propose d'activer la **détection instantanée** : aAgent ajoute alors des hooks dans `~/.claude/settings.json` pour être prévenu en direct de ce que font vos agents.
+   - Le guide affiche tout ce qui sera modifié avant de vous demander votre accord.
+   - Si vous refusez, aAgent lit les transcripts de Claude Code. Ça marche aussi, avec un peu de retard.
+   - Les réglages permettent d'activer ou de retirer les hooks à tout moment.
+3. Lancez un agent :
+   - avec la **Poké Ball « + Agent »** de la barre du bas, qui ouvre un terminal Claude Code ;
+   - ou en lançant `claude` dans n'importe quel terminal du projet.
+4. Son Pokémon apparaît sur une souche, puis part travailler quand l'agent utilise ses outils.
+
+## Ce que vous voyez
+
+### La route
+
+Chaque agent porte une étiquette avec le nom de son projet et une pastille d'état :
+
+| État     | Signification                                    |
+| -------- | ------------------------------------------------ |
+| **ACT**  | L'agent travaille.                               |
+| **ATT**  | Il attend votre permission pour lancer un outil. |
+| **FINI** | Il vient de terminer sa tâche.                   |
+| **SOM**  | Il ne fait rien ; son Pokémon dort sur place.    |
+
+Un agent au travail change de poste toutes les 10 à 20 secondes. Son poste dépend de l'outil qu'il utilise :
+
+| Outil de l'agent                      | Ce que fait son Pokémon                     |
+| ------------------------------------- | ------------------------------------------- |
+| Lecture de fichiers                   | Il lit le panneau de la route.              |
+| Recherche (Grep, Glob, recherche web) | Il fouille les hautes herbes ou un buisson. |
+| Édition de fichiers                   | Il coupe un arbre.                          |
+| Commande dans le terminal             | Il casse un rocher.                         |
+
+Les agents restent toujours dans la vue de départ de la caméra, à bonne distance les uns des autres, pour rester cliquables et lisibles.
+
+### La fiche au survol
+
+<p align="center"><img src="docs/images/hover.png" alt="Fiche d'un agent au survol" width="800"></p>
+
+Passez la souris sur un Pokémon pour voir son nom, son niveau (une tâche terminée = un niveau), ce qu'il fait et sa barre de PV. **Les PV, c'est le contexte encore libre** : quand la barre est rouge, la session approche de sa limite.
+
+### L'écran de combat
+
+<p align="center"><img src="docs/images/battle.png" alt="Écran de combat d'un agent" width="800"></p>
+
+Cliquez sur un Pokémon pour ouvrir son écran de combat :
+
+- **TERMINAL !** ouvre le terminal de l'agent. Le bouton devient **RÉPONDRE !** quand l'agent attend votre permission.
+- Les **Poké Balls** du haut permettent de passer d'un agent à l'autre. Une Ball ternie indique un agent endormi, une Ball qui tremble un agent qui attend.
+- **RÉSUMÉ** ouvre le résumé, **ÉQUIPE** la liste des agents, **FUITE** ferme l'écran (ou `Échap`).
+
+### Le résumé
+
+<p align="center">
+  <img src="docs/images/summary-infos.png" alt="Résumé, onglet Infos" width="49%">
+  <img src="docs/images/summary-stats.png" alt="Résumé, onglet Stats" width="49%">
+</p>
+
+Quatre onglets, et ◀ ▶ pour changer d'agent :
+
+- **INFOS** : numéro du Pokédex, types, projet, contexte utilisé, prochaine évolution.
+- **MÉMO** : sa nature, déduite de ses outils favoris, et le journal de ses actions.
+- **CAPACITÉS** : Édition, Lecture, Commande et Recherche, avec le nombre d'utilisations.
+- **STATS** : PV = contexte libre, ATTAQUE = éditions, DÉFENSE = lectures, ATQ. SPÉ. = commandes, DÉF. SPÉ. = recherches, VITESSE = tâches par heure.
+
+Les capacités, le journal et les stats comptent ce qui se passe pendant que le panneau est ouvert. Ils repartent de zéro quand vous le rechargez.
+
+### Équipe et Pokédex
+
+<p align="center">
+  <img src="docs/images/party.png" alt="Liste des agents" width="49%">
+  <img src="docs/images/pokedex.png" alt="Pokédex" width="49%">
+</p>
+
+- **ÉQUIPE** liste tous vos agents avec leur état et leurs PV. Un clic ouvre le terminal de l'agent.
+- **POKéDEX** garde chaque espèce rencontrée, avec la date, le projet et le nombre de rencontres. Il est enregistré dans `~/.aagent/pokedex.json`.
+
+## Réglages
+
+Le bouton **OPTIONS** ouvre les réglages :
+
+| Réglage                   | Effet                                                          |
+| ------------------------- | -------------------------------------------------------------- |
+| Sound Notifications       | Petits bips de menu quand un agent finit ou attend.            |
+| Instant Detection (Hooks) | Installe ou retire les hooks Claude Code.                      |
+| Watch All Sessions        | Suit aussi les sessions Claude Code lancées hors de ce projet. |
+| Always Show Labels        | Affiche en permanence la fiche de chaque agent.                |
+
+Les fichiers d'aAgent vivent dans `~/.aagent/` : réglages, carte, Pokédex et cache des sprites. Pour tout remettre à zéro, fermez VS Code et supprimez ce dossier. Pour retirer les hooks, décochez **Instant Detection** avant de désinstaller. La désinstallation de l'extension les retire aussi.
+
+### Look Noir/Blanc local (optionnel)
+
+Si vous possédez vos propres textures de carte des jeux, vous pouvez les utiliser **sur votre machine uniquement** :
+
+1. Placez les textures `matrix1_*.png` dans `tmp/bw/matrix1/`. Ce dossier est ignoré par git.
+2. Lancez `npx tsx scripts/build-bw-pack.ts`.
+
+Le script crée un pack dans `~/.aagent/packs/pokemon-bw` et l'active. Ces fichiers ne doivent jamais être ajoutés au dépôt ni partagés.
+
+## Développement
 
 ```bash
-npm run check-types
-npm run lint
-npm test
-npm run e2e
+npm install          # installe tout le monorepo
+npm run compile      # génère le protocole, vérifie les types, lint, build
+npm test             # tests du serveur et de l'interface
+npm run e2e          # tests de bout en bout (Playwright)
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the development workflow and [e2e/README.md](e2e/README.md) for the end-to-end suite.
+- **F5** dans VS Code lance une fenêtre de développement avec l'extension.
+- `npx tsx scripts/generate-route-assets.ts` régénère la carte et ses décors, dessinés par script.
+- `npx tsx scripts/generate-pokedex.ts` régénère les données des espèces.
 
-### Hosted Test Reports
+L'architecture (serveur, protocole, interface) est décrite dans [CLAUDE.md](CLAUDE.md) et [CONTRIBUTING.md](CONTRIBUTING.md).
 
-Build the combined Allure report locally and stage it for Vercel:
+## Crédits et mentions légales
 
-```bash
-npm run test
-npm run e2e
-npm run e2e -- --attach-videos-on-success
-npm run vercel:prepare
-```
+aAgent est un **projet de fan gratuit et non commercial**.
 
-Use `npm run test:report` to build the combined report without preparing the Vercel output, then `npm run test:report:open` to serve it locally.
+- **Pokémon** © Nintendo, Creatures Inc. et GAME FREAK inc. Pokémon et les noms des personnages sont des marques de Nintendo. aAgent n'est ni affilié à ces sociétés, ni approuvé par elles. Le dépôt et l'extension ne contiennent aucune image extraite des jeux.
+- **Décor de la route** : la carte, les arbres, les herbes et les souches sont dessinés par les scripts du dépôt.
+- **Sprites des créatures** : téléchargés à l'exécution, jamais stockés dans le dépôt.
+  - Sprites de déplacement : [PMDCollab SpriteCollab](https://github.com/PMDCollab/SpriteCollab), par ses contributeurs, sous licence [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/). Cette licence interdit tout usage commercial d'aAgent.
+  - Sprites animés, icônes et objets : dépôt [PokeAPI/sprites](https://github.com/PokeAPI/sprites).
+- **Données des espèces** : [PokeAPI](https://pokeapi.co/).
+- **Police** : [Pixelify Sans](https://github.com/eifetx/Pixelify-Sans), © 2021 The Pixelify Sans Project Authors, sous licence SIL Open Font License 1.1.
+- **Base du projet** : [Pixel Agents](https://github.com/pixel-agents-hq/pixel-agents), © 2026 Pablo De Lucca, licence MIT. Les personnages humains d'origine s'inspirent du pack [Metro City de JIK-A-4](https://jik-a-4.itch.io/metrocity-free-topdown-character-pack).
+- **Claude Code** est un produit d'Anthropic. aAgent n'est pas affilié à Anthropic.
 
-The staged output serves the combined `e2e`, `server`, and `webview` Allure report at `/reports/allure/`; it does not include a standalone webview preview. GitHub Actions creates a Vercel Preview deployment only for same-repository pull requests targeting `main`. The deploy job expects `VERCEL_TOKEN`, `VERCEL_ORG_ID`, and `VERCEL_PROJECT_ID` secrets and skips fork pull requests.
+Le détail des licences tierces est dans [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
-## Troubleshooting
+### Licence
 
-- **Standalone will not start:** verify Node.js 20+, omit `--port` to choose a free port, or select another fixed port.
-- **An agent is missing:** confirm **Settings → Instant Detection (Hooks)** is on and that the session belongs to the current workspace. Enable **Watch All Sessions** if needed.
-- **The UI looks disconnected:** open **Settings → Debug View** to inspect the server connection, transcript path, and latest agent data.
-- **Extension and standalone are both running:** this is supported. Current versions create separate files under `~/.pixel-agents/servers/`; stopping one does not remove the other.
+Le code d'aAgent est sous [licence MIT](LICENSE). Cette licence couvre le code uniquement. Elle ne donne aucun droit sur les marques et personnages Pokémon, ni sur les sprites tiers, qui gardent leur propre licence.
 
-## Community & Contributing
-
-Join the [Discord](https://discord.gg/Yk7jXebv9H) to chat with other users and follow development. Use [Issues](https://github.com/pixel-agents-hq/pixel-agents/issues) to report bugs or request features, and [Discussions](https://github.com/pixel-agents-hq/pixel-agents/discussions) for questions and ideas.
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request and read our [Code of Conduct](CODE_OF_CONDUCT.md) before participating.
-
-## Supporting the Project
-
-<a href="https://github.com/sponsors/pablodelucca">
-  <img src="https://img.shields.io/badge/Sponsor-GitHub-ea4aaa?logo=github" alt="GitHub Sponsors">
-</a>
-<a href="https://ko-fi.com/pablodelucca">
-  <img src="https://img.shields.io/badge/Support-Ko--fi-ff5e5b?logo=ko-fi" alt="Ko-fi">
-</a>
-
-## Star History
-
-<a href="https://www.star-history.com/?repos=pixel-agents-hq%2Fpixel-agents&type=date&legend=bottom-right">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=pixel-agents-hq/pixel-agents&type=date&theme=dark&legend=bottom-right&sealed_token=Vn3YGMuZ_HFZAf56zIUQGCBJDYtDq38sOReKlcxWklxR_ilwVLynb7CPraf5uPhnAU7fwHXXoO88tzLkq9tpEYIExl4N8tcXOmu0ehAXPu5DdXNwjixYsxb00LSfeJ25f_jLkcZcTpRKLKYOb9p4_dR1jjAyrWDs7aicdbqejaDtLcVyj-oSoKkBfrS5" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=pixel-agents-hq/pixel-agents&type=date&legend=bottom-right&sealed_token=Vn3YGMuZ_HFZAf56zIUQGCBJDYtDq38sOReKlcxWklxR_ilwVLynb7CPraf5uPhnAU7fwHXXoO88tzLkq9tpEYIExl4N8tcXOmu0ehAXPu5DdXNwjixYsxb00LSfeJ25f_jLkcZcTpRKLKYOb9p4_dR1jjAyrWDs7aicdbqejaDtLcVyj-oSoKkBfrS5" />
-   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=pixel-agents-hq/pixel-agents&type=date&legend=bottom-right&sealed_token=Vn3YGMuZ_HFZAf56zIUQGCBJDYtDq38sOReKlcxWklxR_ilwVLynb7CPraf5uPhnAU7fwHXXoO88tzLkq9tpEYIExl4N8tcXOmu0ehAXPu5DdXNwjixYsxb00LSfeJ25f_jLkcZcTpRKLKYOb9p4_dR1jjAyrWDs7aicdbqejaDtLcVyj-oSoKkBfrS5" />
- </picture>
-</a>
-
-## License
-
-Pixel Agents is available under the [MIT License](LICENSE).
+Vous êtes ayant droit et souhaitez qu'un élément soit retiré ? [Ouvrez une issue](https://github.com/Akinaru/aAgent/issues) : il le sera rapidement.

@@ -26,7 +26,7 @@
 }
 
 :root {
-  --bw-font: 'Pixelify Sans', 'FS Pixel Sans', monospace;
+  --bw-font: 'Pixelify Sans', monospace;
   --bw-ink: #404048;
   --bw-ink-shadow: #c8c8d0;
   --bw-light: #f8f8f8;

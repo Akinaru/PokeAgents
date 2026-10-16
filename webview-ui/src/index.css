@@ -1,13 +1,5 @@
 @import 'tailwindcss';
 
-@font-face {
-  font-family: 'FS Pixel Sans';
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url('/fonts/FSPixelSansUnicode-Regular.ttf') format('truetype');
-}
-
 :root {
   /* Core palette */
   --color-bg: #1e1e2e;
@@ -49,7 +41,7 @@
   /* 1px base so Tailwind spacing maps directly to pixels (pixel-art project) */
   --spacing: 1px;
 
-  --font-pixel: 'FS Pixel Sans', sans-serif;
+  --font-pixel: 'Pixelify Sans', sans-serif;
 
   /* Text sizes (pixel-art scale, base = 22px) */
   --text-*: initial;

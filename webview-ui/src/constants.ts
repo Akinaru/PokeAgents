@@ -390,7 +390,7 @@ export const FOREST_SKIRT_TREE = 'TREE';
 export const FOREST_FLOOR_COLOR = '#3f7a44';
 
 // ── Emote bubbles (Black/White) ──────────────────────────────
-export const EMOTE_FONT = '"Pixelify Sans", "FS Pixel Sans", monospace';
+export const EMOTE_FONT = '"Pixelify Sans", monospace';
 export const EMOTE_OUTLINE_COLOR = '#28282e';
 export const EMOTE_FILL_COLOR = '#ffffff';
 /** "!" — the agent asks for a permission. */
