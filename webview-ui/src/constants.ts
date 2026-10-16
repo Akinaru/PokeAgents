@@ -337,6 +337,13 @@ export const WORK_SPOT_MIN_SPACING_TILES = 6;
 /** Spots farther than this (Manhattan) are only used when none is closer. */
 export const WORK_SPOT_MAX_DISTANCE_TILES = 16;
 
+/** CSS px kept clear at the edges of the default view: agents work only on
+ *  tiles shown inside it, so they stay on screen and clickable. The top margin
+ *  leaves room for the sprite above its feet, the bottom one for the toolbar. */
+export const PLAY_AREA_MARGINS_CSS = { top: 80, bottom: 90, side: 40 };
+/** Wild Pokémon may roam this many CSS px further out than agents. */
+export const ROAM_AREA_EXTRA_CSS_PX = 50;
+
 // ── Wild Pokémon ─────────────────────────────────────────────
 /** Wild Pokémon roaming the route, a new set every day. */
 export const WILD_POKEMON_COUNT = 5;

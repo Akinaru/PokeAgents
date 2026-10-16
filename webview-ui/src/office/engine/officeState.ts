@@ -72,6 +72,12 @@ export class OfficeState {
   wildPokemon: Pet[] = [];
   /** Where working agents go to keep busy (see workSpots.ts). */
   workSpots: WorkSpot[] = [];
+  /** Tiles shown by the default view (agents' spots), and the slightly wider
+   *  area wild Pokémon roam; null until the canvas has measured itself. */
+  private playTiles: Set<string> | null = null;
+  private roamTiles: Set<string> | null = null;
+  /** Walkable tiles inside roamTiles: where wild Pokémon wander. */
+  private wildTiles: Array<{ col: number; row: number }> = [];
   /** Accumulated time for furniture animation frame cycling */
   furnitureAnimTimer = 0;
   selectedAgentId: number | null = null;
@@ -945,7 +951,19 @@ export class OfficeState {
       },
       (col, row) => isWalkable(col, row, this.tileMap, this.blockedTiles),
       getSeatTiles(this.seats),
+    ).filter((spot) => !this.playTiles || this.playTiles.has(`${spot.col},${spot.row}`));
+    const inRoam = this.walkableTiles.filter(
+      (t) => !this.roamTiles || this.roamTiles.has(`${t.col},${t.row}`),
     );
+    this.wildTiles = inRoam.length > 0 ? inRoam : this.walkableTiles;
+  }
+
+  /** Keep agents' spots and wild Pokémon's walks inside what the default view shows. */
+  setViewArea(play: Set<string>, roam: Set<string>): void {
+    this.playTiles = play;
+    this.roamTiles = roam;
+    this.rebuildWorkSpots();
+    this.placeWildPokemon();
   }
 
   /** Next spot for a working agent, away from every other agent. */
@@ -971,9 +989,9 @@ export class OfficeState {
 
   /** Spawn today's wild Pokémon once, and move any left on a blocked tile. */
   private placeWildPokemon(): void {
-    if (this.walkableTiles.length === 0) return;
-    const randomTile = () =>
-      this.walkableTiles[Math.floor(Math.random() * this.walkableTiles.length)];
+    const tiles = this.wildTiles;
+    if (tiles.length === 0) return;
+    const randomTile = () => tiles[Math.floor(Math.random() * tiles.length)];
     if (this.wildPokemon.length === 0) {
       this.wildPokemon = rollWildPokemon(dayKey(new Date()), WILD_POKEMON_COUNT).map((form, i) => {
         const tile = randomTile();
@@ -985,7 +1003,8 @@ export class OfficeState {
       return;
     }
     for (const pet of this.wildPokemon) {
-      if (isWalkable(pet.tileCol, pet.tileRow, this.tileMap, this.blockedTiles)) continue;
+      const inArea = !this.roamTiles || this.roamTiles.has(`${pet.tileCol},${pet.tileRow}`);
+      if (inArea && isWalkable(pet.tileCol, pet.tileRow, this.tileMap, this.blockedTiles)) continue;
       const tile = randomTile();
       pet.tileCol = tile.col;
       pet.tileRow = tile.row;
@@ -1212,7 +1231,7 @@ export class OfficeState {
     }
 
     for (const pet of this.wildPokemon) {
-      updatePet(pet, dt, this.walkableTiles, this.characters, this.tileMap, this.blockedTiles);
+      updatePet(pet, dt, this.wildTiles, this.characters, this.tileMap, this.blockedTiles);
     }
 
     // ── Pet FSM ────────────────────────────────────────────────

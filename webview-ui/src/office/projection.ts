@@ -116,3 +116,46 @@ export function containedPan(
   if (minX > maxX) return null;
   return { x: Math.max(minX, Math.min(maxX, pan.x)), y };
 }
+
+/** Device-px margins kept clear inside the canvas edges. */
+export interface ScreenMargins {
+  top: number;
+  bottom: number;
+  side: number;
+}
+
+/**
+ * Tiles whose center the tilted camera shows inside the canvas, `margins` in
+ * from its edges, at `zoom` with the map centered (the default view, kept
+ * inside the map's edges like the live camera).
+ */
+export function tilesInView(
+  canvasWidth: number,
+  canvasHeight: number,
+  cols: number,
+  rows: number,
+  zoom: number,
+  margins: ScreenMargins,
+): Set<string> {
+  const pan = containedPan(canvasWidth, canvasHeight, cols, rows, zoom, { x: 0, y: 0 }) ?? {
+    x: 0,
+    y: 0,
+  };
+  const { offsetX, offsetY } = mapOffset(canvasWidth, canvasHeight, cols, rows, zoom, pan.x, pan.y);
+  const camera = tiltCamera(offsetX, offsetY, cols, rows, zoom);
+  const tiles = new Set<string>();
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < cols; col++) {
+      const p = camera.project((col + 0.5) * TILE_SIZE, (row + 0.5) * TILE_SIZE);
+      if (
+        p.x >= margins.side &&
+        p.x <= canvasWidth - margins.side &&
+        p.y >= margins.top &&
+        p.y <= canvasHeight - margins.bottom
+      ) {
+        tiles.add(`${col},${row}`);
+      }
+    }
+  }
+  return tiles;
+}

@@ -94,3 +94,13 @@ test('wild Pokémon: distinct, non-shiny, stable for a day', () => {
   assert.ok(wild.every((f) => !f.shiny));
   assert.deepEqual(rollWildPokemon(20261016, 5), wild);
 });
+
+test('tilesInView keeps the map center and drops tiles past the margins', async () => {
+  const { tilesInView } = await import('../src/office/projection.js');
+  const all = tilesInView(1400, 700, 52, 26, 4, { top: 0, bottom: 0, side: 0 });
+  const inner = tilesInView(1400, 700, 52, 26, 4, { top: 160, bottom: 180, side: 80 });
+  assert.ok(inner.has('26,13'));
+  assert.ok(inner.size < all.size);
+  assert.ok(![...inner].some((t) => !all.has(t)));
+  assert.ok(!all.has('0,0'), 'the default view does not reach the far corner');
+});

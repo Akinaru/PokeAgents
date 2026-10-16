@@ -5,10 +5,13 @@ import {
   CAMERA_FOLLOW_SNAP_THRESHOLD,
   PAN_MARGIN_FRACTION,
   PAN_SPRING_LERP,
+  PLAY_AREA_MARGINS_CSS,
+  ROAM_AREA_EXTRA_CSS_PX,
   ZOOM_MAX,
   ZOOM_MIN,
   ZOOM_SCROLL_THRESHOLD,
 } from '../../constants.js';
+import { defaultZoom } from '../../hooks/useEditorActions.js';
 import { unlockAudio } from '../../notificationSound.js';
 import { transport } from '../../transport/index.js';
 import type { BillboardHit, TiltCamera } from '../camera.js';
@@ -26,7 +29,7 @@ import type {
 } from '../engine/renderer.js';
 import { renderFrame } from '../engine/renderer.js';
 import { getCatalogEntry, isRotatable } from '../layout/furnitureCatalog.js';
-import { containedPan, mapOffset } from '../projection.js';
+import { containedPan, mapOffset, tilesInView } from '../projection.js';
 import { EditTool, TILE_SIZE } from '../types.js';
 import { computeNormalModeCursor } from './officeCanvasCursor.js';
 
@@ -72,6 +75,8 @@ export function OfficeCanvas({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const offsetRef = useRef({ x: 0, y: 0 });
+  /** Canvas size + layout the view area was last computed for. */
+  const viewAreaKeyRef = useRef('');
   /** Tilted camera of the last frame (undefined in the flat editor view). */
   const cameraRef = useRef<TiltCamera | undefined>(undefined);
   // Middle-mouse pan state (imperative, no re-renders)
@@ -138,6 +143,26 @@ export function OfficeCanvas({
         // Canvas dimensions are in device pixels
         const w = canvas.width;
         const h = canvas.height;
+
+        // Agents and wild Pokémon keep to what the default view shows
+        const areaLayout = officeState.getLayout();
+        const dpr = window.devicePixelRatio || 1;
+        const areaKey = `${w}x${h}:${areaLayout.cols}x${areaLayout.rows}:${dpr}`;
+        if (w > 0 && h > 0 && viewAreaKeyRef.current !== areaKey) {
+          viewAreaKeyRef.current = areaKey;
+          const z = defaultZoom();
+          const m = PLAY_AREA_MARGINS_CSS;
+          const play = { top: m.top * dpr, bottom: m.bottom * dpr, side: m.side * dpr };
+          const extra = ROAM_AREA_EXTRA_CSS_PX * dpr;
+          officeState.setViewArea(
+            tilesInView(w, h, areaLayout.cols, areaLayout.rows, z, play),
+            tilesInView(w, h, areaLayout.cols, areaLayout.rows, z, {
+              top: play.top - extra,
+              bottom: play.bottom - extra,
+              side: play.side - extra,
+            }),
+          );
+        }
 
         // Build editor render state
         let editorRender: EditorRenderState | undefined;
