@@ -1,14 +1,12 @@
 import { useEffect, useState } from 'react';
 
-import { POKEMON_ANIMATED_URL, POKEMON_SCENE_SEC } from '../constants.js';
+import { POKEMON_SCENE_SEC } from '../constants.js';
 import { playEvolutionSound } from '../notificationSound.js';
 import type { PokemonMoment } from '../pokemon/moments.js';
 import { onPokemonMoment } from '../pokemon/moments.js';
+import { animatedPokemonUrl } from '../pokemon/sprites.js';
 
 type Scene = Extract<PokemonMoment, { kind: 'evolve' | 'shiny' }>;
-
-const spriteUrl = (dex: number, shiny: boolean): string =>
-  `${POKEMON_ANIMATED_URL}/${shiny ? 'shiny/' : ''}${dex}.gif`;
 
 /** Evolution timeline (fraction of the scene): old form, white flicker, new form. */
 const FLICKER_FROM = 0.3;
@@ -54,7 +52,7 @@ export function PokemonScene() {
       <div className="bw bw-scene evolve" style={{ zIndex: 55 }} onClick={close} role="status">
         <div className="bw-scene-stage">
           <img
-            src={spriteUrl(form.dex, form.shiny)}
+            src={animatedPokemonUrl(form.dex, form.shiny)}
             alt={form.name}
             className={flash ? 'flash' : ''}
           />
@@ -87,7 +85,7 @@ export function PokemonScene() {
             ✦
           </span>
         ))}
-        <img src={spriteUrl(scene.form.dex, true)} alt={scene.form.name} />
+        <img src={animatedPokemonUrl(scene.form.dex, true)} alt={scene.form.name} />
       </div>
       <div className="bw-battle-box bw-text-light">
         Un {scene.form.name.toUpperCase()} chromatique sauvage apparaît

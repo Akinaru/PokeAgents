@@ -4,7 +4,8 @@ import { POKEMON_DIALOG_DONE_SEC } from '../constants.js';
 import type { OfficeState } from '../office/engine/officeState.js';
 import type { ToolActivity } from '../office/types.js';
 import { onPokemonMoment } from '../pokemon/moments.js';
-import { characterPokemon } from '../pokemon/sprites.js';
+import type { PokemonForm } from '../pokemon/roll.js';
+import { animatedPokemonUrl, characterPokemon } from '../pokemon/sprites.js';
 
 interface PokemonDialogProps {
   officeState: OfficeState;
@@ -12,9 +13,16 @@ interface PokemonDialogProps {
   onOpenTerminal: (id: number) => void;
 }
 
+/** Who a dialogue line is about: shown as a portrait and a name plate. */
+interface Speaker {
+  name: string;
+  folder?: string;
+  form: PokemonForm | null;
+}
+
 interface DoneNotice {
   key: number;
-  text: string;
+  speaker: Speaker;
   until: number;
 }
 
@@ -34,10 +42,12 @@ export function PokemonDialog({ officeState, agentTools, onOpenTerminal }: Pokem
     () =>
       onPokemonMoment((m) => {
         if (m.kind !== 'done') return;
-        const text = `Le ${m.name.toUpperCase()}${m.folder ? ` de ${m.folder}` : ''} a terminé sa tâche !`;
-        setDone((q) => [...q, { key: nextKey++, text, until: 0 }]);
+        // Capture the form now: the agent may be gone by the time the notice shows
+        const ch = officeState.characters.get(m.agentId);
+        const speaker = { name: m.name, folder: m.folder, form: ch ? characterPokemon(ch) : null };
+        setDone((q) => [...q, { key: nextKey++, speaker, until: 0 }]);
       }),
-    [],
+    [officeState],
   );
 
   // Re-check permissions and expire notices a few times a second
@@ -68,38 +78,32 @@ export function PokemonDialog({ officeState, agentTools, onOpenTerminal }: Pokem
   const permission = asking.find((ch) => !later.has(ch.id));
 
   if (permission) {
-    const pokemon = characterPokemon(permission);
+    const form = characterPokemon(permission);
     const tool = [...(agentTools[permission.id] ?? [])]
       .reverse()
       .find((t) => t.permissionWait && !t.done);
-    const who = `${(pokemon?.name ?? 'Agent').toUpperCase()}${permission.folderName ? ` de ${permission.folderName}` : ''}`;
+    const speaker = { name: form?.name ?? 'Agent', folder: permission.folderName, form };
     return (
-      <DialogFrame>
-        <div
-          className="absolute bw bw-dialog flex flex-col"
-          style={{ right: 0, bottom: 'calc(100% + 8px)', padding: 3 }}
-        >
-          <div className="bw-dialog-inner" style={{ padding: 2 }}>
-            <div
-              className="bw-dialog-body flex flex-col gap-2"
-              style={{ padding: '6px 14px', fontSize: 19 }}
+      <DialogFrame
+        speaker={speaker}
+        choices={
+          <>
+            <button
+              className="bw-text-dark text-left"
+              onClick={() => onOpenTerminal(permission.id)}
             >
-              <button
-                className="bw-text-dark text-left"
-                onClick={() => onOpenTerminal(permission.id)}
-              >
-                ▶ Ouvrir le terminal
-              </button>
-              <button
-                className="bw-text-dark text-left"
-                onClick={() => setLater(new Set([...later, permission.id]))}
-              >
-                &nbsp;&nbsp;Plus tard
-              </button>
-            </div>
-          </div>
-        </div>
-        Le {who} demande la permission.
+              ▶ Ouvrir le terminal
+            </button>
+            <button
+              className="bw-text-dark text-left"
+              onClick={() => setLater(new Set([...later, permission.id]))}
+            >
+              &nbsp;&nbsp;Plus tard
+            </button>
+          </>
+        }
+      >
+        Je demande la permission !
         {tool && (
           <>
             <br />
@@ -111,23 +115,52 @@ export function PokemonDialog({ officeState, agentTools, onOpenTerminal }: Pokem
   }
 
   if (done.length > 0) {
-    return <DialogFrame onClick={() => setDone((q) => q.slice(1))}>{done[0].text}</DialogFrame>;
+    return (
+      <DialogFrame speaker={done[0].speaker} onClick={() => setDone((q) => q.slice(1))}>
+        J'ai terminé ma tâche !
+      </DialogFrame>
+    );
   }
   return null;
 }
 
-function DialogFrame({ children, onClick }: { children: React.ReactNode; onClick?: () => void }) {
+function DialogFrame({
+  speaker,
+  choices,
+  children,
+  onClick,
+}: {
+  speaker: Speaker;
+  choices?: React.ReactNode;
+  children: React.ReactNode;
+  onClick?: () => void;
+}) {
   return (
-    <div
-      className="absolute left-1/2 -translate-x-1/2 bw bw-dialog"
-      style={{ bottom: 78, width: 'min(720px, calc(100% - 32px))', zIndex: 45 }}
-      onClick={onClick}
-      role="status"
-    >
-      <div className="bw-dialog-inner">
-        <div className="bw-dialog-body bw-text-dark">{children}</div>
+    <div className="bw-dialog-dock" onClick={onClick} role="status">
+      <div className="bw-dialog-name">
+        {speaker.name.toUpperCase()}
+        {speaker.folder && <span className="bw-dialog-folder">{speaker.folder}</span>}
       </div>
-      <span className="bw-dialog-arrow" />
+      {choices && (
+        <div className="bw bw-dialog bw-dialog-choices">
+          <div className="bw-dialog-inner">
+            <div className="bw-dialog-body flex flex-col gap-2">{choices}</div>
+          </div>
+        </div>
+      )}
+      <div className="bw bw-dialog">
+        <div className="bw-dialog-inner">
+          <div className="bw-dialog-body bw-dialog-row bw-text-dark">
+            {speaker.form && (
+              <div className="bw-dialog-portrait">
+                <img src={animatedPokemonUrl(speaker.form.dex, speaker.form.shiny)} alt="" />
+              </div>
+            )}
+            <div className="bw-dialog-text">{children}</div>
+          </div>
+        </div>
+        <span className="bw-dialog-arrow" />
+      </div>
     </div>
   );
 }

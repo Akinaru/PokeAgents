@@ -11,6 +11,7 @@ import type { PokemonAnim } from '../../../core/src/pokemon/constants.js';
 import { POKEMON_ANIMS } from '../../../core/src/pokemon/constants.js';
 import {
   POKEMON_ACTION_SLOWDOWN,
+  POKEMON_ANIMATED_URL,
   POKEMON_GROUND_OFFSET_PX,
   POKEMON_IDLE_MAX_SEC,
   POKEMON_IDLE_MIN_SEC,
@@ -287,4 +288,9 @@ export function getWildPokemonSprite(pet: Pet, timeSec: number): SpriteData | nu
   }
   const ticks = (timeSec - idle.startSec) * POKEMON_TICKS_PER_SEC;
   return sheetFrame(anims.Idle, pet.dir, ticks < anims.Idle.totalTicks ? ticks : 0);
+}
+
+/** Animated front sprite (GIF) of a species, used by menus, dialogues and scenes. */
+export function animatedPokemonUrl(dex: number, shiny: boolean): string {
+  return `${POKEMON_ANIMATED_URL}/${shiny ? 'shiny/' : ''}${dex}.gif`;
 }

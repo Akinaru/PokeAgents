@@ -85,6 +85,28 @@ export function speciesStage(species: Species): number {
 // Capture rate doubles as encounter weight: common Pokémon ~255, legendaries ~3.
 const totalWeight = baseSpecies.reduce((sum, s) => sum + s.captureRate, 0);
 
+/**
+ * Chance that a new agent's line passes through this species: its base form's
+ * share of the encounter weight, split evenly at each branching evolution
+ * (the same draws rollPokemon makes). Evolved forms still need the context to fill.
+ */
+export function encounterRate(species: Species): number {
+  if (!species.parent) return species.captureRate / totalWeight;
+  return encounterRate(species.parent) / species.parent.evolutions.length;
+}
+
+export type Rarity = 'common' | 'uncommon' | 'rare' | 'veryRare' | 'legendary';
+
+/** Rarity tier for the Pokédex, from the encounter rate (legendaries always on top). */
+export function speciesRarity(species: Species): Rarity {
+  if (species.legendary) return 'legendary';
+  const rate = encounterRate(species);
+  if (rate >= 1 / 400) return 'common';
+  if (rate >= 1 / 1500) return 'uncommon';
+  if (rate >= 1 / 6000) return 'rare';
+  return 'veryRare';
+}
+
 export interface RolledPokemon {
   /** Evolution line from base form, one branch chosen by the seed. */
   line: Species[];

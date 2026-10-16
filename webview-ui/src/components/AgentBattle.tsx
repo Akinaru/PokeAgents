@@ -4,7 +4,6 @@ import {
   AGENT_BALLS,
   BATTLE_PARTY_SLOTS,
   ITEM_ICON_URL,
-  POKEMON_ANIMATED_URL,
   POKEMON_EVOLUTION_THRESHOLDS,
   POKEMON_TYPES,
 } from '../constants.js';
@@ -14,7 +13,7 @@ import type { Character, ToolActivity } from '../office/types.js';
 import { agentStats, MOVE_IDS, MOVES, natureOf } from '../pokemon/activity.js';
 import type { PokemonForm } from '../pokemon/roll.js';
 import { speciesInfo, speciesStage } from '../pokemon/roll.js';
-import { characterPokemon } from '../pokemon/sprites.js';
+import { animatedPokemonUrl, characterPokemon } from '../pokemon/sprites.js';
 import type { AgentStatus } from '../pokemon/status.js';
 import { agentLevel, agentStatus, agentVitals, STATUS_LABEL } from '../pokemon/status.js';
 
@@ -41,8 +40,7 @@ const TABS: Array<[Tab, string, string]> = [
 ];
 
 const item = (name: string): string => `${ITEM_ICON_URL}/${name}.png`;
-const animated = (form: PokemonForm): string =>
-  `${POKEMON_ANIMATED_URL}/${form.shiny ? 'shiny/' : ''}${form.dex}.gif`;
+const animated = (form: PokemonForm): string => animatedPokemonUrl(form.dex, form.shiny);
 const ballOf = (ch: Character): string => AGENT_BALLS[(ch.seed ?? ch.id) % AGENT_BALLS.length];
 const pad = (n: number, width = 3): string => String(n).padStart(width, '0');
 const clock = (ms: number): string =>

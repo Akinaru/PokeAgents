@@ -210,6 +210,80 @@
   animation: bw-blink 1s steps(2) infinite;
 }
 
+/* Dock above the bottom menu; stays inside the panel at any size */
+.bw-dialog-dock {
+  position: absolute;
+  left: 50%;
+  bottom: 78px;
+  z-index: 45;
+  width: min(720px, calc(100% - 16px));
+  transform: translateX(-50%);
+}
+.bw-dialog-dock .bw-dialog-body {
+  font-size: clamp(15px, 3.2vw, 22px);
+  overflow-wrap: anywhere;
+}
+/* Name plate on the top edge, like the speaker tab of a dialogue */
+.bw-dialog-name {
+  position: relative;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  max-width: 100%;
+  margin: 0 0 -6px 14px;
+  padding: 3px 12px 7px;
+  border-radius: 8px 8px 0 0;
+  background: var(--bw-frame);
+  color: var(--bw-light);
+  font-size: clamp(14px, 2.8vw, 18px);
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-shadow: 1px 1px 0 var(--bw-dark);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.bw-dialog-folder {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 400;
+  letter-spacing: 0;
+  opacity: 0.8;
+}
+.bw-dialog-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-left: 10px;
+}
+.bw-dialog-portrait {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: clamp(48px, 11vw, 72px);
+  aspect-ratio: 1;
+  border: 2px solid var(--bw-frame);
+  border-radius: 8px;
+  background: radial-gradient(circle at 50% 70%, #d8e8f0, #f8f8f8 70%);
+  overflow: hidden;
+}
+.bw-dialog-portrait img {
+  max-width: 90%;
+  max-height: 90%;
+  image-rendering: pixelated;
+}
+.bw-dialog-text {
+  min-width: 0;
+}
+.bw-dialog-choices {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 8px);
+}
+.bw-dialog-choices .bw-dialog-body {
+  padding: 6px 14px;
+}
+
 /* ── Battle HUD plate: white→grey gradient, slanted end, dark underline ── */
 .bw-hud {
   position: relative;
@@ -498,7 +572,7 @@
 }
 .bw-dex-row {
   display: grid;
-  grid-template-columns: 40px 46px minmax(0, 1fr);
+  grid-template-columns: 40px 46px minmax(0, 1fr) auto;
   align-items: center;
   gap: 6px;
   padding: 2px 8px;
@@ -516,9 +590,67 @@
   background: #ffffff;
   color: var(--bw-ink);
 }
+/* Not met yet: black silhouette and dim name, still selectable */
 .bw-dex-row.unseen {
-  color: #7a8a90;
-  cursor: default;
+  color: #8a9aa0;
+}
+.bw-dex-row.unseen img,
+.bw-sprite-stage.unseen img {
+  filter: brightness(0) opacity(0.45);
+}
+.bw-dex-row.current.unseen {
+  color: #68686f;
+}
+/* Rarity stripe on the row's left edge */
+.bw-dex-row.r-uncommon {
+  border-left: 5px solid #40a0e0;
+}
+.bw-dex-row.r-rare {
+  border-left: 5px solid #a050e0;
+}
+.bw-dex-row.r-veryRare {
+  border-left: 5px solid #e05070;
+}
+.bw-dex-row.r-legendary {
+  border-left: 5px solid #f0c020;
+}
+.bw-dex-marks {
+  display: flex;
+  gap: 4px;
+}
+.bw-dex-legend {
+  color: #f0c020;
+  text-shadow: 1px 1px 0 #705010;
+}
+.bw-stat .r-common {
+  color: #489858;
+}
+.bw-stat .r-uncommon {
+  color: #2878c0;
+}
+.bw-stat .r-rare {
+  color: #8038c0;
+}
+.bw-stat .r-veryRare {
+  color: #c03050;
+}
+.bw-stat .r-legendary {
+  color: #c09000;
+}
+.bw-dex-filter {
+  padding: 2px 10px;
+  border: 2px solid #203038;
+  border-radius: 7px;
+  background: #34444e;
+  color: #f8f8f8;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.bw-dex-filter.active {
+  border-color: var(--bw-red);
+  background: #ffffff;
+  color: var(--bw-ink);
 }
 .bw-dex-card {
   border: 3px solid var(--bw-dark);
