@@ -43,7 +43,11 @@ import {
 } from '../../server/src/layoutPersistence.js';
 import { loadAllMapBackgrounds } from '../../server/src/mapBackgrounds.js';
 import { PathSet } from '../../server/src/pathKey.js';
-import { readPokedex, recordPokemonSeen } from '../../server/src/pokedexPersistence.js';
+import {
+  isValidPokemonSeen,
+  readPokedex,
+  recordPokemonSeen,
+} from '../../server/src/pokedexPersistence.js';
 import {
   agentPokemonSeed,
   isValidPokemonRequest,
@@ -841,11 +845,11 @@ export class PixelAgentsViewProvider implements vscode.WebviewViewProvider {
           agents: buildAgentDiagnostics(this.store),
         });
       } else if (message.type === 'recordPokemonSeen') {
-        if (isValidPokemonRequest(message.dex, message.shiny)) {
-          recordPokemonSeen(message.dex, message.shiny as boolean);
+        if (isValidPokemonSeen(message)) {
+          recordPokemonSeen(message.dex, message.shiny, message.seed, message.project);
         }
       } else if (message.type === 'requestPokedex') {
-        this.webview?.postMessage({ type: 'pokedexLoaded', ...readPokedex() });
+        this.webview?.postMessage({ type: 'pokedexLoaded', entries: readPokedex() });
       } else if (message.type === 'requestPokemonSprites') {
         if (isValidPokemonRequest(message.dex, message.shiny)) {
           void pokemonSpritesMessage(message.dex, message.shiny as boolean).then((reply) =>

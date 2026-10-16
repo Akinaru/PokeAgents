@@ -23,6 +23,11 @@ import {
   CHARACTER_Z_SORT_OFFSET,
   DELETE_BUTTON_BG,
   EFFECT_Z_SORT_OFFSET,
+  EMOTE_ALERT_COLOR,
+  EMOTE_DONE_COLOR,
+  EMOTE_FILL_COLOR,
+  EMOTE_FONT,
+  EMOTE_OUTLINE_COLOR,
   FALLBACK_FLOOR_COLOR,
   FOREST_FLOOR_COLOR,
   FOREST_SKIRT_TILES,
@@ -71,12 +76,7 @@ import {
 } from '../sprites/carpetTiles.js';
 import { getPetSprites } from '../sprites/petSpriteData.js';
 import { getCachedSprite, getOutlineSprite, getSilhouetteSprite } from '../sprites/spriteCache.js';
-import {
-  BUBBLE_HEART_SPRITE,
-  BUBBLE_PERMISSION_SPRITE,
-  BUBBLE_WAITING_SPRITE,
-  getCharacterSprites,
-} from '../sprites/spriteData.js';
+import { BUBBLE_HEART_SPRITE, getCharacterSprites } from '../sprites/spriteData.js';
 import type {
   AreaDefinition,
   CarpetTile,
@@ -625,7 +625,21 @@ function renderPokemonEffect(
   zoom: number,
 ): void {
   ctx.save();
-  if (kind === 'evolve') {
+  if (kind === 'work') {
+    // Two sparks rising from the top corners of the sprite, fading out
+    const w = sprite[0].length * zoom;
+    ctx.globalAlpha = 1 - progress;
+    ctx.fillStyle = POKEMON_SPARKLE_COLOR;
+    for (const [fx, drift] of [
+      [0.15, -1],
+      [0.85, 1],
+    ]) {
+      const sx = Math.round(drawX + fx * w + drift * progress * 4 * zoom);
+      const sy = Math.round(drawY + (2 - progress * 8) * zoom);
+      ctx.fillRect(sx - zoom, sy, zoom * 3, zoom);
+      ctx.fillRect(sx, sy - zoom, zoom, zoom * 3);
+    }
+  } else if (kind === 'evolve') {
     ctx.globalAlpha = Math.abs(Math.sin(progress * Math.PI * 5));
     ctx.drawImage(getCachedSprite(getSilhouetteSprite(sprite), zoom), drawX, drawY);
   } else {
@@ -921,6 +935,41 @@ function renderRotateButton(
 
 // ── Speech bubbles ──────────────────────────────────────────────
 
+/**
+ * Black/White emote bubble (world px, scaled by zoom): white rounded box with
+ * a dark outline and a tail pointing down at the Pokémon.
+ */
+function drawEmote(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  glyph: string,
+  color: string,
+  zoom: number,
+): void {
+  const z = zoom;
+  ctx.fillStyle = EMOTE_OUTLINE_COLOR;
+  ctx.beginPath();
+  ctx.roundRect(x, y, 16 * z, 15 * z, 4 * z);
+  ctx.moveTo(x + 4 * z, y + 14 * z);
+  ctx.lineTo(x + 9 * z, y + 14 * z);
+  ctx.lineTo(x + 4 * z, y + 19 * z);
+  ctx.fill();
+  ctx.fillStyle = EMOTE_FILL_COLOR;
+  ctx.beginPath();
+  ctx.roundRect(x + z, y + z, 14 * z, 13 * z, 3 * z);
+  ctx.moveTo(x + 5 * z, y + 13 * z);
+  ctx.lineTo(x + 8 * z, y + 13 * z);
+  ctx.lineTo(x + 5 * z, y + 16.5 * z);
+  ctx.fill();
+  ctx.fillStyle = color;
+  ctx.font = `700 ${11 * z}px ${EMOTE_FONT}`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillText(glyph, x + 8 * z, y + 1.5 * z);
+  ctx.textAlign = 'left';
+}
+
 function renderBubbles(
   ctx: CanvasRenderingContext2D,
   characters: Character[],
@@ -929,36 +978,39 @@ function renderBubbles(
   zoom: number,
   camera?: TiltCamera,
 ): void {
+  const timeSec = performance.now() / 1000;
   for (const ch of characters) {
     if (!ch.bubbleType) continue;
-    // The green checkmark bubble only represents "done" (turn finished). The
-    // idle "Waiting for input" state communicates via its overlay label, not a
-    // bubble, so skip the bubble for it.
+    // The "done" note only marks a finished turn. The idle "Waiting for input"
+    // state is shown by the sleeping Pokémon and its overlay label instead.
     if (ch.bubbleType === 'waiting' && ch.waitingAwaitingInput) continue;
+    const permission = ch.bubbleType === 'permission';
 
-    const sprite =
-      ch.bubbleType === 'permission' ? BUBBLE_PERMISSION_SPRITE : BUBBLE_WAITING_SPRITE;
-
-    // Compute opacity: permission = full, waiting = fade in last 0.5s
+    // Fade the done note out over its last moments; the permission "!" bobs
     let alpha = 1.0;
-    if (ch.bubbleType === 'waiting' && ch.bubbleTimer < BUBBLE_FADE_DURATION_SEC) {
+    if (!permission && ch.bubbleTimer < BUBBLE_FADE_DURATION_SEC) {
       alpha = ch.bubbleTimer / BUBBLE_FADE_DURATION_SEC;
     }
+    const bob = permission && Math.floor(timeSec * 2.5) % 2 === 0 ? 1 : 0;
 
-    const cached = getCachedSprite(sprite, zoom);
-    // Position: centered above the character's head
-    // Character is anchored bottom-center at (ch.x, ch.y), sprite is 16x24
-    // Place bubble above head with a small gap; follow sitting offset
-    const sittingOff = ch.state === CharacterState.TYPE ? BUBBLE_SITTING_OFFSET_PX : 0;
-    const bubbleX = Math.round(offsetX + ch.x * zoom - cached.width / 2);
-    const bubbleY = Math.round(
-      offsetY + (ch.y + sittingOff - BUBBLE_VERTICAL_OFFSET_PX) * zoom - cached.height - 1 * zoom,
-    );
+    // Above the head, slightly to the right, like Black/White's emotes
+    const pokemon = getPokemonSprite(ch, timeSec);
+    const sittingOff = !pokemon && ch.state === CharacterState.TYPE ? BUBBLE_SITTING_OFFSET_PX : 0;
+    const headRise = pokemon ? pokemon.length : BUBBLE_VERTICAL_OFFSET_PX;
+    const x = Math.round(offsetX + (ch.x + 2) * zoom);
+    const y = Math.round(offsetY + (ch.y + sittingOff - headRise - 17 + bob) * zoom);
 
     drawBillboard(ctx, camera, ch.x, ch.y + sittingOff, offsetX, offsetY, zoom, (c) => {
       c.save();
       if (alpha < 1.0) c.globalAlpha = alpha;
-      c.drawImage(cached, bubbleX, bubbleY);
+      drawEmote(
+        c,
+        x,
+        y,
+        permission ? '!' : '♪',
+        permission ? EMOTE_ALERT_COLOR : EMOTE_DONE_COLOR,
+        zoom,
+      );
       c.restore();
     });
   }

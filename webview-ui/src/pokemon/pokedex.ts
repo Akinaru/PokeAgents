@@ -4,34 +4,45 @@
  */
 import { useSyncExternalStore } from 'react';
 
-import type { PokedexLoaded } from '../../../core/src/messages.js';
+import type { PokedexEntry, PokedexLoaded } from '../../../core/src/messages.js';
 import { transport } from '../transport/index.js';
 import type { PokemonForm } from './roll.js';
 
-interface PokedexSnapshot {
-  seen: ReadonlySet<number>;
-  shiny: ReadonlySet<number>;
-}
-
-let snapshot: PokedexSnapshot = { seen: new Set(), shiny: new Set() };
+let entries: ReadonlyMap<number, PokedexEntry> = new Map();
 const listeners = new Set<() => void>();
+/** Sightings already reported this session (seed + form), sent only once. */
+const reported = new Set<string>();
 
-function update(seen: Iterable<number>, shiny: Iterable<number>): void {
-  snapshot = {
-    seen: new Set([...snapshot.seen, ...seen]),
-    shiny: new Set([...snapshot.shiny, ...shiny]),
-  };
+function publish(next: Map<number, PokedexEntry>): void {
+  entries = next;
   listeners.forEach((notify) => notify());
 }
 
-export function markPokemonSeen(form: PokemonForm): void {
-  if (snapshot.seen.has(form.dex) && (!form.shiny || snapshot.shiny.has(form.dex))) return;
-  update([form.dex], form.shiny ? [form.dex] : []);
-  transport.send({ type: 'recordPokemonSeen', dex: form.dex, shiny: form.shiny });
+export function markPokemonSeen(
+  form: PokemonForm,
+  project: string | undefined,
+  seed: number,
+): void {
+  const key = `${seed}:${form.dex}:${form.shiny}`;
+  if (reported.has(key)) return;
+  reported.add(key);
+  const next = new Map(entries);
+  const known = next.get(form.dex);
+  next.set(form.dex, {
+    dex: form.dex,
+    count: (known?.count ?? 0) + 1,
+    shiny: (known?.shiny ?? false) || form.shiny,
+    first: known?.first ?? new Date().toISOString(),
+    projects: project
+      ? [...(known?.projects ?? []).filter((p) => p !== project), project]
+      : (known?.projects ?? []),
+  });
+  publish(next);
+  transport.send({ type: 'recordPokemonSeen', dex: form.dex, shiny: form.shiny, seed, project });
 }
 
 export function onPokedexLoaded(msg: PokedexLoaded): void {
-  update(msg.seen, msg.shiny);
+  publish(new Map(msg.entries.map((e) => [e.dex, e])));
 }
 
 export function requestPokedex(): void {
@@ -43,6 +54,6 @@ const subscribe = (notify: () => void): (() => void) => {
   return () => listeners.delete(notify);
 };
 
-export function usePokedex(): PokedexSnapshot {
-  return useSyncExternalStore(subscribe, () => snapshot);
+export function usePokedex(): ReadonlyMap<number, PokedexEntry> {
+  return useSyncExternalStore(subscribe, () => entries);
 }

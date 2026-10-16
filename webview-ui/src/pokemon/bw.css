@@ -1,0 +1,653 @@
+/*
+ * Pokémon Black/White interface kit: dialogue boxes, battle HUD plates, HP
+ * bars, status badges, touch-screen buttons, party slots and Pokédex cards.
+ * Colors are sampled from the DS games; sizes follow the webview's pixel scale.
+ */
+
+@font-face {
+  font-family: 'Pixelify Sans';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/PixelifySans-latin.woff2') format('woff2');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Pixelify Sans';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/PixelifySans-latin-ext.woff2') format('woff2');
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1E00-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+:root {
+  --bw-font: 'Pixelify Sans', 'FS Pixel Sans', monospace;
+  --bw-ink: #404048;
+  --bw-ink-shadow: #c8c8d0;
+  --bw-light: #f8f8f8;
+  --bw-light-shadow: #68686f;
+  --bw-frame: #58687a;
+  --bw-dark: #28282e;
+  --bw-red: #e83838;
+  --bw-hp-ok: #18c048;
+  --bw-hp-ok-top: #70f8a8;
+  --bw-hp-warn: #e0a018;
+  --bw-hp-warn-top: #f8e070;
+  --bw-hp-low: #e02818;
+  --bw-hp-low-top: #f88870;
+  --bw-exp: #58b8f8;
+  --bw-act: #2f8a3c;
+  --bw-act-top: #58c868;
+  --bw-som: #68688a;
+  --bw-som-top: #a8a8c8;
+  --bw-att: #c86018;
+  --bw-att-top: #f8a050;
+  --bw-fini: #3070c0;
+  --bw-fini-top: #78b8f8;
+  --bw-male: #3878e0;
+  --bw-female: #e05090;
+  --bw-cursor: #f8d048;
+}
+
+.bw {
+  font-family: var(--bw-font);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  -webkit-font-smoothing: antialiased;
+}
+.bw-text-dark {
+  color: var(--bw-ink);
+  text-shadow: 1px 1px 0 var(--bw-ink-shadow);
+}
+.bw-text-light {
+  color: var(--bw-light);
+  text-shadow: 1px 1px 0 var(--bw-light-shadow);
+}
+
+/* ── Small text colors ── */
+.bw-star {
+  color: #d8a818;
+}
+.bw-highlight {
+  color: #3060c0;
+}
+.bw-meta {
+  color: #585868;
+}
+.bw-sub {
+  color: #284868;
+}
+.bw-muted {
+  color: #787888;
+  text-shadow: none;
+}
+.bw-genus {
+  color: #686878;
+  text-shadow: none;
+}
+.bw-counter {
+  color: #f8d860;
+}
+.bw-dim-light {
+  color: #c8c8d0;
+}
+
+/* ── Modal frame shared by the Équipe and Pokédex screens ── */
+.bw-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+  z-index: 61;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 4px solid #101014;
+  border-radius: 14px;
+}
+.bw-modal-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  min-height: 38px;
+  font-size: 19px;
+  background: linear-gradient(#383840, #202028);
+}
+.bw-modal-head.dex {
+  border-bottom: 3px solid var(--bw-red);
+}
+.bw-modal-foot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 12px;
+  background: linear-gradient(#383840, #18181c);
+}
+.bw-modal-foot.party {
+  background: linear-gradient(#283848, #141c24);
+  border-top: 1px solid #5878a0;
+}
+.bw-menu {
+  filter: drop-shadow(0 4px 0 rgba(0, 0, 0, 0.35));
+}
+.bw-btn.yellow {
+  --label: #f8d040;
+}
+.bw-btn.blue {
+  --label: #68c8f8;
+}
+.bw-btn.green {
+  --label: #80e868;
+}
+.bw-btn.white {
+  --label: #e8e8f0;
+}
+.bw-ball.mini {
+  width: 24px;
+  height: 24px;
+  border-width: 3px;
+  box-shadow: none;
+  cursor: default;
+}
+.bw-ball.mini::after {
+  display: none;
+}
+.bw-sprite-stage {
+  display: grid;
+  place-items: center;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  background: radial-gradient(#ffffff 40%, #dfe6ea 70%);
+}
+.bw-stat {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 2px;
+  border-bottom: 1px solid #e0e0e8;
+}
+.bw-slot-name {
+  text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+/* ── Overworld dialogue box: white, double blue-grey frame, red ▼ ── */
+.bw-dialog {
+  position: relative;
+  border-radius: 12px;
+  padding: 4px;
+  background: var(--bw-frame);
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.25);
+}
+.bw-dialog-inner {
+  border-radius: 9px;
+  padding: 3px;
+  background: #e8eef4;
+}
+.bw-dialog-body {
+  border-radius: 7px;
+  padding: 12px 44px 12px 18px;
+  background: linear-gradient(#ffffff, #f0f0f6);
+  font-size: 22px;
+  line-height: 1.45;
+}
+.bw-dialog-arrow {
+  position: absolute;
+  right: 22px;
+  bottom: 16px;
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 10px solid var(--bw-red);
+  animation: bw-blink 1s steps(2) infinite;
+}
+
+/* ── Battle HUD plate: white→grey gradient, slanted end, dark underline ── */
+.bw-hud {
+  position: relative;
+  padding: 6px 30px 10px 12px;
+  background: linear-gradient(#ffffff, #d8d8e0);
+  clip-path: polygon(0 0, calc(100% - 22px) 0, 100% 50%, calc(100% - 22px) 100%, 0 100%);
+  filter: drop-shadow(0 3px 0 #303038);
+}
+.bw-hud-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+/* ── HP / EXP bars ── */
+.bw-hp {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 14px;
+  padding: 2px 3px;
+  border-radius: 4px;
+  background: #404048;
+}
+.bw-hp-label {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  color: #f8d860;
+}
+.bw-hp-track {
+  flex: 1;
+  height: 8px;
+  background: #202028;
+}
+.bw-hp-fill {
+  height: 100%;
+  background: linear-gradient(var(--top) 0 50%, var(--bottom) 50% 100%);
+}
+.bw-hp-fill.ok {
+  --top: var(--bw-hp-ok-top);
+  --bottom: var(--bw-hp-ok);
+}
+.bw-hp-fill.warn {
+  --top: var(--bw-hp-warn-top);
+  --bottom: var(--bw-hp-warn);
+}
+.bw-hp-fill.low {
+  --top: var(--bw-hp-low-top);
+  --bottom: var(--bw-hp-low);
+}
+.bw-exp {
+  height: 6px;
+  padding: 1px;
+  background: #202028;
+}
+.bw-exp > div {
+  height: 100%;
+  background: var(--bw-exp);
+}
+
+/* ── Status badges (ACT / SOM / ATT / FINI) ── */
+.bw-badge {
+  display: inline-block;
+  min-width: 40px;
+  padding: 1px 5px 2px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.1;
+  text-align: center;
+  color: #fff;
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.35);
+  background: linear-gradient(var(--top) 0 45%, var(--bottom) 45%);
+}
+.bw-badge.act {
+  --top: var(--bw-act-top);
+  --bottom: var(--bw-act);
+}
+.bw-badge.som {
+  --top: var(--bw-som-top);
+  --bottom: var(--bw-som);
+}
+.bw-badge.att {
+  --top: var(--bw-att-top);
+  --bottom: var(--bw-att);
+}
+.bw-badge.fini {
+  --top: var(--bw-fini-top);
+  --bottom: var(--bw-fini);
+}
+.bw-gender.male {
+  color: var(--bw-male);
+}
+.bw-gender.female {
+  color: var(--bw-female);
+}
+
+/* ── Type badge ── */
+.bw-type {
+  display: inline-block;
+  min-width: 74px;
+  padding: 1px 6px 2px;
+  border: 2px solid var(--bw-dark);
+  border-radius: 5px;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+  color: #fff;
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.4);
+  background: linear-gradient(var(--type-top), var(--type));
+}
+
+/* ── Touch-screen octagon buttons ── */
+.bw-btn {
+  --cut: 12px;
+  position: relative;
+  display: grid;
+  place-items: center;
+  gap: 2px;
+  padding: 8px 16px;
+  border: none;
+  cursor: pointer;
+  font-family: var(--bw-font);
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--label, #f8f8f8);
+  text-shadow: 1px 1px 0 #101014;
+  background: #18181c;
+  clip-path: polygon(
+    var(--cut) 0,
+    calc(100% - var(--cut)) 0,
+    100% var(--cut),
+    100% calc(100% - var(--cut)),
+    calc(100% - var(--cut)) 100%,
+    var(--cut) 100%,
+    0 calc(100% - var(--cut)),
+    0 var(--cut)
+  );
+}
+.bw-btn::before {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  z-index: -1;
+  background: linear-gradient(#585860, #3a3a42 50%, #26262c);
+  clip-path: inherit;
+}
+.bw-btn {
+  isolation: isolate;
+}
+.bw-btn:hover::before,
+.bw-btn.active::before {
+  background: linear-gradient(#6a6a74, #48484f 50%, #303036);
+}
+.bw-btn:focus-visible {
+  outline: 3px solid var(--bw-cursor);
+  outline-offset: 2px;
+}
+.bw-btn.light {
+  color: var(--bw-ink);
+  text-shadow: 1px 1px 0 var(--bw-ink-shadow);
+}
+.bw-btn.light::before {
+  background: linear-gradient(#ffffff, #d0d0d8);
+}
+.bw-btn.danger::before {
+  background: linear-gradient(#f86060, #c02828);
+}
+
+/* Poké Ball "+ Agent" button */
+.bw-ball {
+  position: relative;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  border: 4px solid #202028;
+  cursor: pointer;
+  background: linear-gradient(#e83838 0 45%, #202028 45% 55%, #f4f4f8 55%);
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.35);
+}
+.bw-ball::after {
+  content: '+';
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: 22px;
+  height: 22px;
+  translate: -50% -50%;
+  border: 4px solid #202028;
+  border-radius: 50%;
+  background: #f8f8f8;
+  display: grid;
+  place-items: center;
+  font: 700 18px/1 var(--bw-font);
+  color: var(--bw-ink);
+}
+.bw-ball:hover {
+  filter: brightness(1.08);
+}
+.bw-ball:focus-visible {
+  outline: 3px solid var(--bw-cursor);
+  outline-offset: 3px;
+}
+
+/* ── Nametag on the map ── */
+.bw-nametag {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 1px 7px 2px 5px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 6px;
+  background: rgba(20, 28, 36, 0.84);
+  font-size: 14px;
+  line-height: 1.2;
+  color: #fff;
+  white-space: nowrap;
+}
+.bw-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--dot);
+}
+
+/* ── Route banner (wooden sign sliding in at the top-left) ── */
+.bw-banner {
+  padding: 3px;
+  border-radius: 6px;
+  background: #383028;
+  animation: bw-banner 4.5s ease-in-out forwards;
+}
+.bw-banner > div {
+  padding: 4px 26px 5px;
+  border-radius: 4px;
+  background: linear-gradient(#a87848, #7a5030);
+  box-shadow: inset 0 0 0 3px rgba(255, 240, 210, 0.15);
+  font-size: 22px;
+  font-weight: 700;
+  color: #fff6e0;
+  text-shadow: 1px 1px 0 #402810;
+}
+
+/* ── Party slots (Équipe) ── */
+.bw-party {
+  background:
+    repeating-linear-gradient(60deg, rgba(140, 190, 250, 0.08) 0 2px, transparent 2px 18px),
+    repeating-linear-gradient(-60deg, rgba(140, 190, 250, 0.08) 0 2px, transparent 2px 18px),
+    linear-gradient(#2c5888, #183050);
+}
+.bw-slot {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  gap: 2px 10px;
+  padding: 6px 12px 8px 6px;
+  border: 3px solid #101828;
+  border-radius: 16px;
+  cursor: pointer;
+  text-align: left;
+  color: #182840;
+  background: linear-gradient(var(--slot-top, #98d8f8), var(--slot, #58a8e0));
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.45);
+}
+.bw-slot.som {
+  --slot-top: #b8c8e0;
+  --slot: #8898b8;
+}
+.bw-slot.att {
+  --slot-top: #f8c070;
+  --slot: #e08830;
+  animation: bw-slot-blink 1s steps(2) infinite;
+}
+.bw-slot:hover,
+.bw-slot:focus-visible {
+  outline: 3px solid var(--bw-cursor);
+  outline-offset: 1px;
+}
+
+/* ── Pokédex ── */
+.bw-dex-grid {
+  background:
+    linear-gradient(rgba(40, 110, 96, 0.22) 1px, transparent 1px) 0 0 / 12px 12px,
+    linear-gradient(90deg, rgba(40, 110, 96, 0.22) 1px, transparent 1px) 0 0 / 12px 12px,
+    linear-gradient(#a0d8c8, #70b8a8);
+}
+.bw-dex-row {
+  display: grid;
+  grid-template-columns: 40px 46px minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  border: 2px solid #203038;
+  border-radius: 7px;
+  background: #34444e;
+  color: #f8f8f8;
+  font-size: 16px;
+  text-align: left;
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+}
+.bw-dex-row.current {
+  border-color: var(--bw-red);
+  background: #ffffff;
+  color: var(--bw-ink);
+}
+.bw-dex-row.unseen {
+  color: #7a8a90;
+  cursor: default;
+}
+.bw-dex-card {
+  border: 3px solid var(--bw-dark);
+  border-radius: 10px;
+  background: #f8f8f8;
+  overflow: hidden;
+}
+.bw-dex-card-head {
+  display: flex;
+  justify-content: space-between;
+  padding: 3px 10px;
+  background: linear-gradient(#f04848, #c02828);
+  color: #fff;
+  font-weight: 700;
+  font-size: 20px;
+  text-shadow: 1px 1px 0 #701818;
+}
+.bw-info-box {
+  border-radius: 10px;
+  padding: 3px;
+  background: #48a888;
+}
+.bw-info-box > div {
+  border-radius: 8px;
+  padding: 8px 14px;
+  background: #283038;
+  font-size: 19px;
+  line-height: 1.45;
+}
+
+/* ── Evolution / shiny scene ── */
+.bw-scene {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  cursor: pointer;
+  animation: bw-fade-in 0.25s ease-out;
+}
+.bw-scene-stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+.bw-scene-stage img {
+  width: 192px;
+  image-rendering: pixelated;
+}
+.bw-scene.evolve .bw-scene-stage {
+  background:
+    repeating-conic-gradient(from 0deg, rgba(255, 255, 255, 0.16) 0 6deg, transparent 6deg 20deg),
+    radial-gradient(circle, #ffffff 0 12%, #c8e0f8 25%, #4878c0 60%, #182850);
+}
+.bw-scene.evolve .bw-scene-stage::before {
+  content: '';
+  position: absolute;
+  inset: -50%;
+  background: inherit;
+  animation: bw-spin 18s linear infinite;
+}
+.bw-scene.evolve img.flash {
+  filter: brightness(0) invert(1);
+}
+.bw-scene.shiny .bw-scene-stage {
+  background: linear-gradient(#406890, #88b8c8 45%, #78b860 45%, #386830);
+}
+.bw-sparkle {
+  position: absolute;
+  font-size: 28px;
+  color: #fffbd0;
+  text-shadow: 0 0 6px #fff;
+  animation: bw-twinkle 1.2s ease-in-out infinite;
+}
+.bw-battle-box {
+  padding: 14px 48px 16px 22px;
+  border-top: 2px solid #a8a8b0;
+  background: linear-gradient(rgba(56, 56, 64, 0.94), rgba(32, 32, 40, 0.96));
+  font-size: 24px;
+  line-height: 1.45;
+  position: relative;
+}
+
+@keyframes bw-blink {
+  50% {
+    opacity: 0;
+  }
+}
+@keyframes bw-slot-blink {
+  50% {
+    border-color: #f8f080;
+  }
+}
+@keyframes bw-banner {
+  0% {
+    transform: translateY(-130%);
+  }
+  10%,
+  85% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-130%);
+  }
+}
+@keyframes bw-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes bw-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes bw-twinkle {
+  50% {
+    opacity: 0.15;
+    transform: scale(0.6);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bw-dialog-arrow,
+  .bw-slot.att,
+  .bw-scene.evolve .bw-scene-stage::before,
+  .bw-sparkle {
+    animation: none;
+  }
+  .bw-banner {
+    animation: none;
+    display: none;
+  }
+}

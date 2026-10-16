@@ -24,6 +24,7 @@ import {
 } from '../office/toolUtils.js';
 import type { OfficeLayout, ToolActivity } from '../office/types.js';
 import { setWallSprites } from '../office/wallTiles.js';
+import { emitPokemonMoment } from '../pokemon/moments.js';
 import { onPokedexLoaded } from '../pokemon/pokedex.js';
 import { characterPokemon, onPokemonSpritesLoaded } from '../pokemon/sprites.js';
 import { isBrowserRuntime, isE2E } from '../runtime.js';
@@ -494,10 +495,25 @@ export function useExtensionMessages(
           }
           return { ...prev, [id]: status };
         });
+        // A turn counts as done only on the active → waiting edge, so status
+        // resends on reconnect do not level the Pokémon up again.
+        const finishedTurn = status === 'waiting' && os.characters.get(id)?.isActive === true;
         os.setAgentActive(id, status === 'active');
         if (status === 'waiting') {
           os.showWaitingBubble(id, msg.awaitingInput === true);
           const ch = os.characters.get(id);
+          if (ch && finishedTurn) {
+            ch.tasksDone++;
+            const pokemon = characterPokemon(ch);
+            if (pokemon) {
+              emitPokemonMoment({
+                kind: 'done',
+                agentId: id,
+                name: pokemon.name,
+                folder: ch.folderName,
+              });
+            }
+          }
           playDoneSound(ch ? characterPokemon(ch)?.dex : undefined);
         }
       } else if (msg.type === 'agentToolPermission') {

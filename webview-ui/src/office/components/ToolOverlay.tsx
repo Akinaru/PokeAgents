@@ -1,28 +1,23 @@
 import { useEffect, useState } from 'react';
 
-import { Button } from '../../components/ui/Button.js';
 import {
   CHARACTER_SITTING_OFFSET_PX,
-  CONTEXT_CRITICAL_THRESHOLD,
-  CONTEXT_DANGER_THRESHOLD,
-  CONTEXT_GAUGE_BG,
-  CONTEXT_GAUGE_COLOR_CRITICAL,
-  CONTEXT_GAUGE_COLOR_DANGER,
-  CONTEXT_GAUGE_COLOR_OK,
-  CONTEXT_GAUGE_COLOR_WARN,
-  CONTEXT_GAUGE_HEIGHT_PX,
-  CONTEXT_GAUGE_WIDTH_PX,
-  CONTEXT_WARN_THRESHOLD,
-  NAMETAG_BG_COLOR,
-  NAMETAG_BORDER_COLOR,
+  HUD_BELOW_GAP_PX,
+  HUD_FLIP_BELOW_PX,
   NAMETAG_OFFSET_Y_PX,
-  NAMETAG_TEXT_COLOR,
   TEAM_LEAD_COLOR,
   TEAM_ROLE_COLOR,
   TOOL_OVERLAY_VERTICAL_OFFSET,
 } from '../../constants.js';
 import type { SubagentCharacter } from '../../hooks/useExtensionMessages.js';
 import { characterPokemon } from '../../pokemon/sprites.js';
+import {
+  agentLevel,
+  agentStatus,
+  agentVitals,
+  STATUS_DOT,
+  STATUS_LABEL,
+} from '../../pokemon/status.js';
 import type { OfficeState } from '../engine/officeState.js';
 import { overlayProjection } from '../projection.js';
 import type { ToolActivity } from '../types.js';
@@ -81,13 +76,6 @@ function getActivityText(
   return 'Idle';
 }
 
-function getFuelColor(ratio: number): string {
-  if (ratio >= CONTEXT_CRITICAL_THRESHOLD) return CONTEXT_GAUGE_COLOR_CRITICAL;
-  if (ratio >= CONTEXT_DANGER_THRESHOLD) return CONTEXT_GAUGE_COLOR_DANGER;
-  if (ratio >= CONTEXT_WARN_THRESHOLD) return CONTEXT_GAUGE_COLOR_WARN;
-  return CONTEXT_GAUGE_COLOR_OK;
-}
-
 export function ToolOverlay({
   officeState,
   agents,
@@ -138,18 +126,16 @@ export function ToolOverlay({
         return (
           <div
             key={`tag-${id}`}
-            className="absolute -translate-x-1/2 text-2xs leading-none whitespace-nowrap px-4 py-1"
+            className="absolute -translate-x-1/2 bw bw-nametag"
             style={{
               left: project.toScreen(ch.x, ch.y).x,
               top: project.toScreen(ch.x, ch.y, -NAMETAG_OFFSET_Y_PX).y,
               pointerEvents: 'none',
               zIndex: 40,
-              color: NAMETAG_TEXT_COLOR,
-              background: NAMETAG_BG_COLOR,
-              border: `1px solid ${NAMETAG_BORDER_COLOR}`,
             }}
             data-testid="agent-nametag"
           >
+            <span className="bw-dot" style={{ ['--dot' as string]: STATUS_DOT[agentStatus(ch)] }} />
             {ch.folderName}
           </div>
         );
@@ -222,122 +208,110 @@ export function ToolOverlay({
           );
         }
 
-        // Determine dot color
-        const tools = agentTools[id];
-        const hasPermission = subHasPermission || tools?.some((t) => t.permissionWait && !t.done);
-        const hasActiveTools = tools?.some((t) => !t.done);
-        const isActive = ch.isActive;
-        const hasWaiting = ch.bubbleType === 'waiting';
-
-        let dotColor: string | null = null;
-        if (hasPermission || hasWaiting) {
-          dotColor = 'var(--color-status-permission)';
-        } else if (isActive && hasActiveTools) {
-          dotColor = 'var(--color-status-active)';
-        }
-
         // Team info
         const teamRoleLabel = ch.isTeamLead ? 'LEAD' : ch.agentName || null;
         const pokemon = characterPokemon(ch);
-        const identityLabel = [
-          pokemon && `${pokemon.name}${pokemon.shiny ? ' ★' : ''}`,
-          ch.folderName,
-        ]
-          .filter(Boolean)
-          .join(' · ');
-        const hasExtraLines = !!(identityLabel || teamRoleLabel);
-
+        const status = agentStatus(ch);
+        const vitals = agentVitals(ch);
         // Context gauge. Every agent gets one — lead, teammate, adopted,
         // headless — as soon as it has taken a turn. Sub-agents never do: they
         // have no session of their own, so contextTokens stays 0.
         const contextRatio = ch.contextTokens / ch.maxContextTokens;
         const showContextGauge = !isSub && ch.contextTokens > 0;
 
+        // The battle HUD plate of Black/White: name, sex, level, status, the
+        // context left as HP and the progress to the next evolution as EXP.
+        // Near the top edge the plate would be cut off: show it under the nametag instead
+        const below = screenY < HUD_FLIP_BELOW_PX;
         return (
           <div
             key={id}
-            className="absolute flex flex-col items-center -translate-x-1/2"
+            className={`absolute -translate-x-1/2 bw ${below ? '' : '-translate-y-full'}`}
             style={{
               left: screenX,
-              top: screenY - (hasExtraLines ? 34 : 28),
+              top: below
+                ? project.toScreen(ch.x, ch.y, -NAMETAG_OFFSET_Y_PX).y + HUD_BELOW_GAP_PX
+                : screenY,
               pointerEvents: isSelected ? 'auto' : 'none',
-              opacity: alwaysShowOverlay && !isSelected && !isHovered ? (isSub ? 0.5 : 0.75) : 1,
+              opacity: alwaysShowOverlay && !isSelected && !isHovered ? (isSub ? 0.55 : 0.8) : 1,
               zIndex: isSelected ? 42 : 41,
             }}
             data-testid="agent-overlay"
             data-agent-id={id}
           >
-            <div className="flex items-center border-border px-8 pt-2 pb-4 gap-5 pixel-panel whitespace-nowrap max-w-2xs">
-              {dotColor && (
-                <span
-                  className={`w-6 h-6 rounded-full shrink-0 ${isActive && !hasPermission && !hasWaiting ? 'pixel-pulse' : ''}`}
-                  style={{ background: dotColor }}
-                />
-              )}
-              <div className="flex flex-col gap-0 overflow-hidden">
-                {teamRoleLabel && (
-                  <span
-                    className="overflow-hidden text-ellipsis block leading-none"
-                    style={{
-                      fontSize: '18px',
-                      color: ch.isTeamLead ? TEAM_LEAD_COLOR : TEAM_ROLE_COLOR,
-                      fontWeight: ch.isTeamLead ? 'bold' : undefined,
-                    }}
-                  >
-                    {teamRoleLabel}
+            <div className="bw-hud" style={{ minWidth: 250, maxWidth: 340 }}>
+              <div className="bw-hud-row bw-text-dark" style={{ fontSize: 20, fontWeight: 600 }}>
+                <span className="overflow-hidden text-ellipsis">
+                  {(pokemon?.name ?? (isSub ? 'Sous-agent' : 'Agent')).toUpperCase()}
+                </span>
+                {pokemon?.gender && (
+                  <span className={`bw-gender ${pokemon.gender}`} style={{ textShadow: 'none' }}>
+                    {pokemon.gender === 'male' ? '♂' : '♀'}
                   </span>
                 )}
+                {pokemon?.shiny && <span className="bw-star">★</span>}
+                <span className="ml-auto" style={{ fontSize: 17 }}>
+                  N.{agentLevel(ch)}
+                </span>
+              </div>
+              <div className="bw-hud-row" style={{ marginTop: 3 }}>
+                <span className={`bw-badge ${status}`}>{STATUS_LABEL[status]}</span>
                 <span
-                  className="overflow-hidden text-ellipsis block leading-none"
-                  style={{
-                    fontSize: isSub ? '20px' : '22px',
-                    fontStyle: isSub ? 'italic' : undefined,
-                  }}
+                  className="bw-text-dark overflow-hidden text-ellipsis"
+                  style={{ fontSize: 16, fontStyle: isSub ? 'italic' : undefined }}
                 >
                   {activityText}
                 </span>
-                {identityLabel && (
-                  <span className="text-2xs leading-none overflow-hidden text-ellipsis block">
-                    {identityLabel}
+              </div>
+              {showContextGauge && (
+                <div
+                  style={{ marginTop: 5 }}
+                  title={`${Math.round(contextRatio * 100)}% context used (${(ch.contextTokens / 1000).toFixed(0)}k of ${(ch.maxContextTokens / 1000).toFixed(0)}k tokens)`}
+                  data-testid="context-gauge"
+                  data-context-pct={Math.round(contextRatio * 100)}
+                >
+                  <div className="bw-hp">
+                    <span className="bw-hp-label">PV</span>
+                    <div className="bw-hp-track">
+                      <div
+                        className={`bw-hp-fill ${vitals.hpTier}`}
+                        style={{ width: `${vitals.hp * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                  <div className="bw-hud-row bw-text-dark" style={{ fontSize: 14, marginTop: 1 }}>
+                    <span style={{ fontSize: 12 }}>EXP</span>
+                    <div className="bw-exp" style={{ flex: 1 }}>
+                      <div style={{ width: `${vitals.exp * 100}%` }} />
+                    </div>
+                    <span>{vitals.hpText}</span>
+                  </div>
+                </div>
+              )}
+              <div className="bw-hud-row bw-meta" style={{ fontSize: 14, marginTop: 3 }}>
+                {ch.folderName && (
+                  <span className="overflow-hidden text-ellipsis">{ch.folderName}</span>
+                )}
+                {teamRoleLabel && (
+                  <span style={{ color: ch.isTeamLead ? TEAM_LEAD_COLOR : TEAM_ROLE_COLOR }}>
+                    {teamRoleLabel}
                   </span>
                 )}
+                {isSelected && !isSub && (
+                  <button
+                    className="ml-auto bw-text-dark"
+                    style={{ fontSize: 18, lineHeight: 1, cursor: 'pointer' }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onCloseAgent(id);
+                    }}
+                    title="Close agent"
+                  >
+                    ×
+                  </button>
+                )}
               </div>
-              {isSelected && !isSub && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onCloseAgent(id);
-                  }}
-                  title="Close agent"
-                  className="ml-2 shrink-0 leading-none"
-                >
-                  ×
-                </Button>
-              )}
             </div>
-            {showContextGauge && (
-              <div
-                style={{
-                  width: CONTEXT_GAUGE_WIDTH_PX,
-                  height: CONTEXT_GAUGE_HEIGHT_PX,
-                  background: CONTEXT_GAUGE_BG,
-                  marginTop: 2,
-                }}
-                title={`${Math.round(contextRatio * 100)}% context used (${(ch.contextTokens / 1000).toFixed(0)}k of ${(ch.maxContextTokens / 1000).toFixed(0)}k tokens)`}
-                data-testid="context-gauge"
-                data-context-pct={Math.round(contextRatio * 100)}
-              >
-                <div
-                  style={{
-                    width: `${Math.min(contextRatio * 100, 100)}%`,
-                    height: '100%',
-                    background: getFuelColor(contextRatio),
-                  }}
-                />
-              </div>
-            )}
           </div>
         );
       })}

@@ -76,6 +76,7 @@ export function createCharacter(
     matrixEffectSeeds: [],
     contextTokens: 0,
     maxContextTokens: DEFAULT_MAX_CONTEXT_TOKENS,
+    tasksDone: 0,
   };
 }
 

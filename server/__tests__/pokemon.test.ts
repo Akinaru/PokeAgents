@@ -3,7 +3,7 @@ import * as os from 'os';
 import * as path from 'path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { readPokedex, recordPokemonSeen } from '../src/pokedexPersistence.js';
+import { isValidPokemonSeen, readPokedex, recordPokemonSeen } from '../src/pokedexPersistence.js';
 import {
   agentPokemonSeed,
   isValidPokemonRequest,
@@ -63,6 +63,7 @@ describe('Pokémon request validation and seeds', () => {
 describe('Pokédex persistence', () => {
   let home: string;
   let previousHome: string | undefined;
+  const file = () => path.join(home, '.aagent', 'pokedex.json');
 
   beforeEach(() => {
     previousHome = process.env.HOME;
@@ -76,25 +77,56 @@ describe('Pokédex persistence', () => {
   });
 
   it('starts empty', () => {
-    expect(readPokedex()).toEqual({ seen: [], shiny: [] });
+    expect(readPokedex()).toEqual([]);
   });
 
-  it('records species once, sorted, and tracks shinies separately', () => {
-    recordPokemonSeen(25, false);
-    recordPokemonSeen(1, true);
-    recordPokemonSeen(25, false);
-    expect(readPokedex()).toEqual({ seen: [1, 25], shiny: [1] });
+  it('counts one encounter per session seed, sorted by dex', () => {
+    recordPokemonSeen(25, false, 111, 'aAgent');
+    recordPokemonSeen(25, false, 111, 'aAgent'); // same session again (reload)
+    recordPokemonSeen(25, false, 222, 'docs');
+    recordPokemonSeen(1, false, 333, undefined);
+    const dex = readPokedex();
+    expect(dex.map((e) => [e.dex, e.count])).toEqual([
+      [1, 1],
+      [25, 2],
+    ]);
+    expect(dex[1].projects).toEqual(['aAgent', 'docs']);
+    expect(Date.parse(dex[1].first)).not.toBeNaN();
   });
 
-  it('adds the shiny flag to an already seen species', () => {
-    recordPokemonSeen(25, false);
-    recordPokemonSeen(25, true);
-    expect(readPokedex()).toEqual({ seen: [25], shiny: [25] });
+  it('remembers a species was seen shiny', () => {
+    recordPokemonSeen(25, false, 1, undefined);
+    recordPokemonSeen(25, true, 2, undefined);
+    recordPokemonSeen(25, false, 3, undefined);
+    expect(readPokedex()[0].shiny).toBe(true);
+  });
+
+  it('keeps the latest projects only, most recent last', () => {
+    for (const p of ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'b']) recordPokemonSeen(25, false, 1, p);
+    expect(readPokedex()[0].projects).toEqual(['c', 'd', 'e', 'f', 'g', 'b']);
+  });
+
+  it('reads the legacy { seen, shiny } file as one encounter each', () => {
+    fs.mkdirSync(path.dirname(file()), { recursive: true });
+    fs.writeFileSync(file(), JSON.stringify({ seen: [25, 357], shiny: [25] }));
+    expect(readPokedex().map((e) => [e.dex, e.count, e.shiny])).toEqual([
+      [25, 1, true],
+      [357, 1, false],
+    ]);
   });
 
   it('ignores a corrupt file instead of throwing', () => {
-    fs.mkdirSync(path.join(home, '.aagent'), { recursive: true });
-    fs.writeFileSync(path.join(home, '.aagent', 'pokedex.json'), '{oops');
-    expect(readPokedex()).toEqual({ seen: [], shiny: [] });
+    fs.mkdirSync(path.dirname(file()), { recursive: true });
+    fs.writeFileSync(file(), '{oops');
+    expect(readPokedex()).toEqual([]);
+  });
+
+  it('validates recordPokemonSeen payloads', () => {
+    expect(isValidPokemonSeen({ dex: 25, shiny: false, seed: 1 })).toBe(true);
+    expect(isValidPokemonSeen({ dex: 25, shiny: false, seed: 1, project: 'x' })).toBe(true);
+    expect(isValidPokemonSeen({ dex: 25, shiny: false })).toBe(false);
+    expect(isValidPokemonSeen({ dex: 25, shiny: false, seed: 1, project: 'x'.repeat(500) })).toBe(
+      false,
+    );
   });
 });

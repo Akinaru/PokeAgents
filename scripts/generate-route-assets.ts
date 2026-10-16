@@ -513,7 +513,7 @@ const furniture: FurnitureSpec[] = [
 // ── Default map: "Route 1" ──────────────────────────────────
 
 /** Bump to replace users' saved layouts with this map on their next load. */
-const ROUTE_LAYOUT_REVISION = 6;
+const ROUTE_LAYOUT_REVISION = 7;
 const BACKGROUNDS_DIR = path.join(__dirname, '..', 'webview-ui', 'src', 'assets', 'maps');
 const GRASS = 7;
 const PATH = 8;
@@ -623,6 +623,7 @@ function routeLayout(): Record<string, unknown> {
     rows: ROWS,
     layoutRevision: ROUTE_LAYOUT_REVISION,
     background: ROUTE_BACKGROUND,
+    name: 'Route 1',
     tiles,
     tileColors: tiles.map((t) => FLOOR_COLORS[t]),
     furniture: placed,

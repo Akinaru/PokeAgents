@@ -1,17 +1,26 @@
-/** Short-lived visual effects on Pokémon characters (evolution flash, shiny sparkle). */
-import { POKEMON_EVOLVE_EFFECT_SEC, POKEMON_SHINY_EFFECT_SEC } from '../constants.js';
+/** Short-lived visual effects on Pokémon characters (evolution flash, shiny
+ *  sparkle, the little sparks of a tool starting). */
+import {
+  POKEMON_EVOLVE_EFFECT_SEC,
+  POKEMON_SHINY_EFFECT_SEC,
+  POKEMON_WORK_EFFECT_SEC,
+} from '../constants.js';
 import type { Character } from '../office/types.js';
 
-export type PokemonEffectKind = 'evolve' | 'shiny';
+export type PokemonEffectKind = 'evolve' | 'shiny' | 'work';
 
 const DURATION_SEC: Record<PokemonEffectKind, number> = {
   evolve: POKEMON_EVOLVE_EFFECT_SEC,
   shiny: POKEMON_SHINY_EFFECT_SEC,
+  work: POKEMON_WORK_EFFECT_SEC,
 };
 
 const active = new WeakMap<Character, { kind: PokemonEffectKind; startSec: number }>();
 
 export function startPokemonEffect(ch: Character, kind: PokemonEffectKind): void {
+  // Tool sparks never cut an evolution or shiny reveal short
+  const current = active.get(ch);
+  if (kind === 'work' && current && current.kind !== 'work') return;
   active.set(ch, { kind, startSec: performance.now() / 1000 });
 }
 

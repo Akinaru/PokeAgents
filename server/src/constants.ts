@@ -106,6 +106,10 @@ export const POKEMON_CACHE_DIR_NAME = 'pokemon';
 export const POKEMON_CACHE_MAX_ENTRIES = 128;
 export const POKEMON_FETCH_TIMEOUT_MS = 15_000;
 export const POKEDEX_FILE_NAME = 'pokedex.json';
+/** Distinct sessions remembered per species (its encounter count caps here). */
+export const POKEDEX_MAX_SEEDS = 99;
+/** Project folders remembered per species. */
+export const POKEDEX_MAX_PROJECTS = 6;
 
 // ── Map backgrounds from external asset directories ─────────
 export const MAX_MAP_BACKGROUND_PNG_SIZE = 4 * 1024 * 1024;

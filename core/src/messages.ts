@@ -274,8 +274,15 @@ export interface PokemonAnimSheet {
 
 export interface PokedexLoaded {
   type: 'pokedexLoaded';
-  seen: number[];
-  shiny: number[];
+  entries: PokedexEntry[];
+}
+
+export interface PokedexEntry {
+  dex: number;
+  count: number;
+  shiny: boolean;
+  first: string;
+  projects: string[];
 }
 
 export interface MapBackgroundsLoaded {
@@ -475,6 +482,8 @@ export interface RecordPokemonSeen {
   type: 'recordPokemonSeen';
   dex: number;
   shiny: boolean;
+  seed: number;
+  project?: string;
 }
 
 export interface RequestPokedex {

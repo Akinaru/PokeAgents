@@ -21,6 +21,7 @@ import type { Character, SpriteData } from '../office/types.js';
 import { CharacterState, Direction } from '../office/types.js';
 import { transport } from '../transport/index.js';
 import { startPokemonEffect } from './effects.js';
+import { emitPokemonMoment } from './moments.js';
 import { markPokemonSeen } from './pokedex.js';
 import type { PokemonForm } from './roll.js';
 import { evolutionStage, pokemonForm, rollPokemon } from './roll.js';
@@ -193,6 +194,7 @@ function pokemonFrame(
     p.lastTool = ch.currentTool;
     if (ch.state === CharacterState.TYPE && ch.currentTool && !isReadingTool(ch.currentTool)) {
       p.oneShot = { anim: 'Charge', startSec: timeSec };
+      startPokemonEffect(ch, 'work');
     }
   }
   if (!p.oneShot && timeSec >= p.nextIdleSec) {
@@ -224,9 +226,15 @@ export function characterPokemon(ch: Character): PokemonForm | null {
   const form = pokemonForm(rolled, stage);
   if (previous === undefined || stage > previous) {
     reachedStage.set(ch, stage);
-    markPokemonSeen(form);
-    if (previous !== undefined) startPokemonEffect(ch, 'evolve');
-    else if (form.shiny) startPokemonEffect(ch, 'shiny');
+    markPokemonSeen(form, ch.folderName, ch.seed);
+    if (previous !== undefined) {
+      startPokemonEffect(ch, 'evolve');
+      const from = pokemonForm(rolled, previous);
+      emitPokemonMoment({ kind: 'evolve', agentId: ch.id, from, to: form, folder: ch.folderName });
+    } else if (form.shiny) {
+      startPokemonEffect(ch, 'shiny');
+      emitPokemonMoment({ kind: 'shiny', agentId: ch.id, form, folder: ch.folderName });
+    }
   }
   return form;
 }

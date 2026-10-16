@@ -8,6 +8,10 @@ import { DebugView } from './components/DebugView.js';
 import { EditActionBar } from './components/EditActionBar.js';
 import { IntroBubble } from './components/IntroBubble.js';
 import { MigrationNotice } from './components/MigrationNotice.js';
+import { PartyModal } from './components/PartyModal.js';
+import { PokedexModal } from './components/PokedexModal.js';
+import { PokemonDialog } from './components/PokemonDialog.js';
+import { PokemonScene } from './components/PokemonScene.js';
 import { SettingsModal } from './components/SettingsModal.js';
 import { Tooltip } from './components/Tooltip.js';
 import { Modal } from './components/ui/Modal.js';
@@ -104,6 +108,8 @@ function App() {
 
   const [isChangelogOpen, setIsChangelogOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isPartyOpen, setIsPartyOpen] = useState(false);
+  const [isPokedexOpen, setIsPokedexOpen] = useState(false);
   const [isHooksInfoOpen, setIsHooksInfoOpen] = useState(false);
   const [hooksTooltipDismissed, setHooksTooltipDismissed] = useState(false);
   const [isDebugMode, setIsDebugMode] = useState(false);
@@ -327,6 +333,8 @@ function App() {
       return false;
     })();
 
+  const routeName = officeState.getLayout().name;
+
   if (!layoutReady) {
     return <div className="w-full h-full flex items-center justify-center ">Loading...</div>;
   }
@@ -518,7 +526,41 @@ function App() {
         onToggleEditMode={editor.handleToggleEditMode}
         isSettingsOpen={isSettingsOpen}
         onToggleSettings={() => setIsSettingsOpen((v) => !v)}
+        isPartyOpen={isPartyOpen}
+        onToggleParty={() => setIsPartyOpen((v) => !v)}
+        isPokedexOpen={isPokedexOpen}
+        onTogglePokedex={() => setIsPokedexOpen((v) => !v)}
         workspaceFolders={workspaceFolders}
+      />
+
+      <PokemonDialog
+        officeState={officeState}
+        agentTools={agentTools}
+        onOpenTerminal={(id) => {
+          officeState.selectedAgentId = id;
+          officeState.cameraFollowId = id;
+          handleClick(id);
+        }}
+      />
+      <PokemonScene />
+      {routeName && (
+        <div className="absolute bw bw-banner" style={{ top: 12, left: 64, zIndex: 30 }}>
+          <div>{routeName.toUpperCase()}</div>
+        </div>
+      )}
+
+      <PokedexModal isOpen={isPokedexOpen} onClose={() => setIsPokedexOpen(false)} />
+      <PartyModal
+        isOpen={isPartyOpen}
+        onClose={() => setIsPartyOpen(false)}
+        officeState={officeState}
+        agents={agents}
+        onSelectAgent={(id) => {
+          setIsPartyOpen(false);
+          officeState.selectedAgentId = id;
+          officeState.cameraFollowId = id;
+          handleClick(id);
+        }}
       />
 
       <VersionIndicator

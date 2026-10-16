@@ -3,9 +3,7 @@ import { PALETTE_COUNT } from '../../constants.js';
 import { adjustSprite } from '../colorize.js';
 import type { Direction, SpriteData } from '../types.js';
 import { Direction as Dir } from '../types.js';
-import bubblePermissionData from './bubble-permission.json';
 import bubblePetData from './bubble-pet.json';
-import bubbleWaitingData from './bubble-waiting.json';
 
 // ── Speech Bubble Sprites ───────────────────────────────────────
 
@@ -17,12 +15,6 @@ interface BubbleSpriteJson {
 function resolveBubbleSprite(data: BubbleSpriteJson): SpriteData {
   return data.pixels.map((row) => row.map((key) => data.palette[key] ?? key));
 }
-
-/** Permission bubble: white square with "..." in amber, and a tail pointer (11x13) */
-export const BUBBLE_PERMISSION_SPRITE: SpriteData = resolveBubbleSprite(bubblePermissionData);
-
-/** Waiting bubble: white square with green checkmark, and a tail pointer (11x13) */
-export const BUBBLE_WAITING_SPRITE: SpriteData = resolveBubbleSprite(bubbleWaitingData);
 
 /** Heart bubble: pet petting feedback (11x13) */
 export const BUBBLE_HEART_SPRITE: SpriteData = resolveBubbleSprite(bubblePetData);

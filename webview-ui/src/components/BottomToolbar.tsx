@@ -3,8 +3,6 @@ import { useEffect, useRef, useState } from 'react';
 import type { WorkspaceFolder } from '../hooks/useExtensionMessages.js';
 import { isBrowserRuntime } from '../runtime.js';
 import { transport } from '../transport/index.js';
-import { PokedexModal } from './PokedexModal.js';
-import { Button } from './ui/Button.js';
 import { Dropdown, DropdownItem } from './ui/Dropdown.js';
 
 interface BottomToolbarProps {
@@ -13,6 +11,10 @@ interface BottomToolbarProps {
   onToggleEditMode: () => void;
   isSettingsOpen: boolean;
   onToggleSettings: () => void;
+  isPartyOpen: boolean;
+  onToggleParty: () => void;
+  isPokedexOpen: boolean;
+  onTogglePokedex: () => void;
   workspaceFolders: WorkspaceFolder[];
 }
 
@@ -22,11 +24,14 @@ export function BottomToolbar({
   onToggleEditMode,
   isSettingsOpen,
   onToggleSettings,
+  isPartyOpen,
+  onToggleParty,
+  isPokedexOpen,
+  onTogglePokedex,
   workspaceFolders,
 }: BottomToolbarProps) {
   const [isFolderPickerOpen, setIsFolderPickerOpen] = useState(false);
   const [isBypassMenuOpen, setIsBypassMenuOpen] = useState(false);
-  const [isPokedexOpen, setIsPokedexOpen] = useState(false);
   const folderPickerRef = useRef<HTMLDivElement>(null);
   const pendingBypassRef = useRef(false);
   // Close folder picker / bypass menu on outside click
@@ -84,26 +89,21 @@ export function BottomToolbar({
   };
 
   return (
-    <div className="absolute bottom-10 left-10 z-20 flex items-center gap-4 pixel-panel p-4">
+    <div className="absolute bottom-10 left-10 z-20 flex items-end gap-6 bw bw-menu">
       {/* Hide + Agent in standalone browser mode (no terminal to interact with) */}
       {!isBrowserRuntime && (
         <div
           ref={folderPickerRef}
-          className="relative"
+          className="relative flex flex-col items-center"
           onMouseEnter={handleAgentHover}
           onMouseLeave={handleAgentLeave}
         >
-          <Button
-            variant="accent"
+          <button
+            className="bw-ball"
             onClick={handleAgentClick}
-            className={
-              isFolderPickerOpen || isBypassMenuOpen
-                ? 'bg-accent-bright'
-                : 'bg-accent hover:bg-accent-bright'
-            }
-          >
-            + Agent
-          </Button>
+            title="Lancer un agent"
+            aria-label="+ Agent"
+          />
           <Dropdown isOpen={isBypassMenuOpen}>
             <DropdownItem onClick={() => handleBypassSelect(true)}>
               Skip permissions mode <span className="text-2xs text-warning">⚠</span>
@@ -122,28 +122,56 @@ export function BottomToolbar({
           </Dropdown>
         </div>
       )}
-      <Button
-        variant={isEditMode ? 'active' : 'default'}
+      <MenuButton label="ÉQUIPE" tone="yellow" active={isPartyOpen} onClick={onToggleParty} />
+      <MenuButton
+        label="CARTE"
+        tone="blue"
+        active={isEditMode}
         onClick={onToggleEditMode}
         title="Edit office layout"
-      >
-        Layout
-      </Button>
-      <Button
-        variant={isSettingsOpen ? 'active' : 'default'}
+      />
+      <MenuButton
+        label="POKéDEX"
+        tone="green"
+        active={isPokedexOpen}
+        onClick={onTogglePokedex}
+        title="Pokédex"
+      />
+      <MenuButton
+        label="OPTIONS"
+        tone="white"
+        active={isSettingsOpen}
         onClick={onToggleSettings}
         title="Settings"
-      >
-        Settings
-      </Button>
-      <Button
-        variant={isPokedexOpen ? 'active' : 'default'}
-        onClick={() => setIsPokedexOpen((v) => !v)}
-        title="Pokédex"
-      >
-        Pokédex
-      </Button>
-      <PokedexModal isOpen={isPokedexOpen} onClose={() => setIsPokedexOpen(false)} />
+      />
     </div>
+  );
+}
+
+/** One octagonal touch-screen button of the Black/White battle menu. */
+function MenuButton({
+  label,
+  tone,
+  active,
+  onClick,
+  title,
+}: {
+  label: string;
+  /** Label color, as in the battle menu (BAG yellow, RUN blue, POKéMON green). */
+  tone: 'yellow' | 'blue' | 'green' | 'white';
+  active: boolean;
+  onClick: () => void;
+  title?: string;
+}) {
+  return (
+    <button
+      className={`bw-btn ${tone} ${active ? 'active' : ''}`}
+      style={{ minWidth: 108, height: 46, fontSize: 17 }}
+      onClick={onClick}
+      title={title ?? label}
+      aria-pressed={active}
+    >
+      {label}
+    </button>
   );
 }

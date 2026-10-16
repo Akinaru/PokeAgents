@@ -7,8 +7,9 @@
 import { POKEMON_EVOLUTION_THRESHOLDS, POKEMON_SHINY_RATE } from '../constants.js';
 import pokedex from './pokedex.json';
 
-/** [dex, frenchName, captureRate, evolvesFrom (0 = none), flags] — see scripts/generate-pokedex.ts */
-type PokedexEntry = [number, string, number, number, number];
+/** [dex, frenchName, captureRate, evolvesFrom (0 = none), flags, genderRate, types, genus]
+ *  — see scripts/generate-pokedex.ts */
+type PokedexEntry = [number, string, number, number, number, number, number[], string];
 
 const FLAG_SHINY_AVAILABLE = 2;
 
@@ -17,16 +18,36 @@ interface Species {
   name: string;
   captureRate: number;
   shinyAvailable: boolean;
+  /** Female chance in eighths; -1 for genderless species. */
+  genderRate: number;
+  /** PokeAPI type ids, primary first. */
+  types: number[];
+  /** French category, e.g. "Pokémon Souris". */
+  genus: string;
+  parent: Species | null;
   evolutions: Species[];
 }
 
 const speciesByDex = new Map<number, Species>();
-for (const [dex, name, captureRate, , flags] of pokedex as PokedexEntry[]) {
+for (const [
+  dex,
+  name,
+  captureRate,
+  ,
+  flags,
+  genderRate,
+  types,
+  genus,
+] of pokedex as PokedexEntry[]) {
   speciesByDex.set(dex, {
     dex,
     name,
     captureRate,
     shinyAvailable: (flags & FLAG_SHINY_AVAILABLE) !== 0,
+    genderRate,
+    types,
+    genus,
+    parent: null,
     evolutions: [],
   });
 }
@@ -34,6 +55,7 @@ const baseSpecies: Species[] = [];
 for (const [dex, , , evolvesFrom] of pokedex as PokedexEntry[]) {
   const parent = speciesByDex.get(evolvesFrom);
   const species = speciesByDex.get(dex)!;
+  species.parent = parent ?? null;
   if (parent) parent.evolutions.push(species);
   else baseSpecies.push(species);
 }
@@ -41,8 +63,20 @@ for (const [dex, , , evolvesFrom] of pokedex as PokedexEntry[]) {
 /** Species an agent can be (those with every overworld animation). */
 export const POKEDEX_SPECIES_COUNT = speciesByDex.size;
 
-export function speciesName(dex: number): string | undefined {
-  return speciesByDex.get(dex)?.name;
+export function speciesInfo(dex: number): Species | undefined {
+  return speciesByDex.get(dex);
+}
+
+/** Every species, in National Dex order. */
+export const ALL_SPECIES: readonly Species[] = [...speciesByDex.values()].sort(
+  (a, b) => a.dex - b.dex,
+);
+
+/** Evolution stage of a species within its line (0 = base form). */
+export function speciesStage(species: Species): number {
+  let stage = 0;
+  for (let s = species.parent; s; s = s.parent) stage++;
+  return stage;
 }
 
 // Capture rate doubles as encounter weight: common Pokémon ~255, legendaries ~3.
@@ -52,6 +86,8 @@ export interface RolledPokemon {
   /** Evolution line from base form, one branch chosen by the seed. */
   line: Species[];
   shiny: boolean;
+  /** Uniform draw in [0, 1) deciding the sex against each form's gender ratio. */
+  genderRoll: number;
 }
 
 /** mulberry32: tiny seeded PRNG, uniform in [0, 1). */
@@ -87,7 +123,9 @@ export function rollPokemon(seed: number): RolledPokemon {
     species = species.evolutions[Math.floor(rand() * species.evolutions.length)];
     line.push(species);
   }
-  const rolled = { line, shiny: rand() < POKEMON_SHINY_RATE };
+  // Draw order matters: earlier draws keep existing agents' rolls stable.
+  const shiny = rand() < POKEMON_SHINY_RATE;
+  const rolled = { line, shiny, genderRoll: rand() };
   rollCache.set(seed, rolled);
   return rolled;
 }
@@ -101,18 +139,32 @@ export function evolutionStage(rolled: RolledPokemon, contextRatio: number): num
   return Math.min(stage, rolled.line.length - 1);
 }
 
+export type PokemonGender = 'male' | 'female' | null;
+
 export interface PokemonForm {
   dex: number;
   name: string;
   /** Shiny only when this form has shiny sprites. */
   shiny: boolean;
+  gender: PokemonGender;
+  types: number[];
+  genus: string;
+  /** Name of the next form along the rolled line, if any. */
+  nextName: string | null;
 }
 
 export function pokemonForm(rolled: RolledPokemon, stage: number): PokemonForm {
-  const species = rolled.line[Math.min(stage, rolled.line.length - 1)];
+  const index = Math.min(stage, rolled.line.length - 1);
+  const species = rolled.line[index];
+  const gender: PokemonGender =
+    species.genderRate < 0 ? null : rolled.genderRoll < species.genderRate / 8 ? 'female' : 'male';
   return {
     dex: species.dex,
     name: species.name,
     shiny: rolled.shiny && species.shinyAvailable,
+    gender,
+    types: species.types,
+    genus: species.genus,
+    nextName: rolled.line[index + 1]?.name ?? null,
   };
 }

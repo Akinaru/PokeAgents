@@ -13,7 +13,7 @@ import {
 } from './configPersistence.js';
 import { HUE_SHIFT_MAX_DEG, PALETTE_COUNT } from './constants.js';
 import { loadLayout, writeLayoutToFile } from './layoutPersistence.js';
-import { readPokedex, recordPokemonSeen } from './pokedexPersistence.js';
+import { isValidPokemonSeen, readPokedex, recordPokemonSeen } from './pokedexPersistence.js';
 import {
   agentPokemonSeed,
   isValidPokemonRequest,
@@ -119,12 +119,13 @@ export function handleClientMessage(
       break;
 
     case 'recordPokemonSeen':
-      if (isValidPokemonRequest(msg.dex, msg.shiny))
-        recordPokemonSeen(msg.dex, msg.shiny as boolean);
+      if (isValidPokemonSeen(msg)) {
+        recordPokemonSeen(msg.dex, msg.shiny, msg.seed, msg.project);
+      }
       break;
 
     case 'requestPokedex':
-      send({ type: 'pokedexLoaded', ...readPokedex() });
+      send({ type: 'pokedexLoaded', entries: readPokedex() });
       break;
 
     case 'requestPokemonSprites':

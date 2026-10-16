@@ -59,13 +59,51 @@ test('evolution stage grows with context and stops at the last form', () => {
   assert.equal(evolutionStage(rollPokemon(seed), 1), 0);
 });
 
+const species = (over: Record<string, unknown> = {}) => ({
+  dex: 1,
+  name: 'X',
+  captureRate: 45,
+  shinyAvailable: true,
+  genderRate: 4,
+  types: [12],
+  genus: 'Pokémon Test',
+  parent: null,
+  evolutions: [],
+  ...over,
+});
+
 test('a shiny roll only shows shiny on forms that have shiny sprites', () => {
   const form = pokemonForm(
-    {
-      line: [{ dex: 1, name: 'X', captureRate: 45, shinyAvailable: false, evolutions: [] }],
-      shiny: true,
-    },
+    { line: [species({ shinyAvailable: false })], shiny: true, genderRoll: 0 },
     0,
   );
   assert.equal(form.shiny, false);
+});
+
+test('sex follows the species gender ratio, and genderless species have none', () => {
+  const roll = (genderRate: number, genderRoll: number) =>
+    pokemonForm({ line: [species({ genderRate })], shiny: false, genderRoll }, 0).gender;
+  assert.equal(roll(-1, 0.1), null);
+  assert.equal(roll(0, 0.01), 'male');
+  assert.equal(roll(8, 0.99), 'female');
+  assert.equal(roll(4, 0.49), 'female');
+  assert.equal(roll(4, 0.51), 'male');
+});
+
+test('the next form is named until the end of the line', () => {
+  const line = [species({ name: 'A' }), species({ name: 'B' })];
+  assert.equal(pokemonForm({ line, shiny: false, genderRoll: 0 }, 0).nextName, 'B');
+  assert.equal(pokemonForm({ line, shiny: false, genderRoll: 0 }, 1).nextName, null);
+});
+
+test('adding the sex draw keeps existing species and shiny rolls', () => {
+  // Seed 42 rolled this species before the gender draw existed
+  assert.deepEqual(
+    rollPokemon(42).line.map((s) => s.dex),
+    [562, 563],
+  );
+  assert.deepEqual(
+    rollPokemon(99).line.map((s) => s.dex),
+    [252, 253, 254],
+  );
 });

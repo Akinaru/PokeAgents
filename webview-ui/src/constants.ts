@@ -252,20 +252,10 @@ export const INTRO_CAMERA_MIN_CHAR_VISIBLE_WORLD = 48;
  *  sits a bit above the vertical center instead of dead-centered. */
 export const INTRO_CAMERA_DOWN_SHIFT_PX = 50;
 
-// ── Context Fuel Gauge ──────────────────────────────────────
+// ── Context window (shown as HP) ────────────────────────────
 /** Window assumed before the runtime reports one (it always does for agents
  *  that have taken a turn; this only covers characters created ahead of it). */
 export const DEFAULT_MAX_CONTEXT_TOKENS = 200_000;
-export const CONTEXT_WARN_THRESHOLD = 0.6;
-export const CONTEXT_DANGER_THRESHOLD = 0.8;
-export const CONTEXT_CRITICAL_THRESHOLD = 0.95;
-export const CONTEXT_GAUGE_WIDTH_PX = 40;
-export const CONTEXT_GAUGE_HEIGHT_PX = 4;
-export const CONTEXT_GAUGE_COLOR_OK = '#44cc44';
-export const CONTEXT_GAUGE_COLOR_WARN = '#ffcc00';
-export const CONTEXT_GAUGE_COLOR_DANGER = '#ff8800';
-export const CONTEXT_GAUGE_COLOR_CRITICAL = '#ff2222';
-export const CONTEXT_GAUGE_BG = '#222';
 
 // ── Agent Teams ─────────────────────────────────────────────
 export const TEAM_LEAD_COLOR = '#ffd700';
@@ -339,9 +329,6 @@ export const POKEMON_ACTION_SLOWDOWN = 3;
 // ── Nametags ─────────────────────────────────────────────────
 /** World px below the character anchor (its feet) where the nametag sits. */
 export const NAMETAG_OFFSET_Y_PX = 3;
-export const NAMETAG_TEXT_COLOR = '#FFFFFF';
-export const NAMETAG_BG_COLOR = 'rgba(24, 32, 40, 0.72)';
-export const NAMETAG_BORDER_COLOR = 'rgba(255, 255, 255, 0.25)';
 
 // ── Tilted camera (Black/White style) ────────────────────────
 /** Camera pitch below the horizon; 90 would be straight top-down. */
@@ -365,3 +352,50 @@ export const FOREST_SKIRT_TILES = 8;
 export const FOREST_SKIRT_TREE = 'TREE';
 /** Ground under the skirt trees. */
 export const FOREST_FLOOR_COLOR = '#3f7a44';
+
+// ── Emote bubbles (Black/White) ──────────────────────────────
+export const EMOTE_FONT = '"Pixelify Sans", "FS Pixel Sans", monospace';
+export const EMOTE_OUTLINE_COLOR = '#28282e';
+export const EMOTE_FILL_COLOR = '#ffffff';
+/** "!" — the agent asks for a permission. */
+export const EMOTE_ALERT_COLOR = '#e02828';
+/** "♪" — the agent just finished its turn. */
+export const EMOTE_DONE_COLOR = '#2868d8';
+/** Sparks shown when a working Pokémon starts a writing tool. */
+export const POKEMON_WORK_EFFECT_SEC = 0.9;
+/** Small menu icons for party slots (40×30 PNGs). */
+export const POKEMON_MINI_ICON_URL =
+  'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-vii/icons';
+/** How long a "finished its task" message stays in the dialogue box. */
+export const POKEMON_DIALOG_DONE_SEC = 4.5;
+/** How long an evolution or shiny scene plays before closing by itself. */
+export const POKEMON_SCENE_SEC = 3.6;
+
+// ── Pokémon types ────────────────────────────────────────────
+/** French names and badge colors of the 18 types, by PokeAPI type id. */
+export const POKEMON_TYPES: Record<number, { name: string; color: string; top: string }> = {
+  1: { name: 'NORMAL', color: '#8a8a6a', top: '#c8c8a8' },
+  2: { name: 'COMBAT', color: '#a02820', top: '#d86050' },
+  3: { name: 'VOL', color: '#7860c8', top: '#b8a0f0' },
+  4: { name: 'POISON', color: '#803888', top: '#c070c0' },
+  5: { name: 'SOL', color: '#b89040', top: '#e8c878' },
+  6: { name: 'ROCHE', color: '#987838', top: '#c8b060' },
+  7: { name: 'INSECTE', color: '#809018', top: '#b8c838' },
+  8: { name: 'SPECTRE', color: '#584080', top: '#9078b8' },
+  9: { name: 'ACIER', color: '#8888a8', top: '#c8c8d8' },
+  10: { name: 'FEU', color: '#d85818', top: '#f89850' },
+  11: { name: 'EAU', color: '#3870d8', top: '#78a8f0' },
+  12: { name: 'PLANTE', color: '#48a030', top: '#88d060' },
+  13: { name: 'ÉLECTRIK', color: '#d8a818', top: '#f8d838' },
+  14: { name: 'PSY', color: '#d84878', top: '#f888a8' },
+  15: { name: 'GLACE', color: '#68b8b8', top: '#a8e0e0' },
+  16: { name: 'DRAGON', color: '#5030d8', top: '#9070f0' },
+  17: { name: 'TÉNÈBRES', color: '#584838', top: '#887868' },
+  18: { name: 'FÉE', color: '#d870a0', top: '#f8b0c8' },
+};
+
+// ── Agent HUD plate ──────────────────────────────────────────
+/** Above this many CSS px from the top, the plate shows under the agent instead. */
+export const HUD_FLIP_BELOW_PX = 140;
+/** Gap between the nametag and a plate shown under the agent. */
+export const HUD_BELOW_GAP_PX = 22;

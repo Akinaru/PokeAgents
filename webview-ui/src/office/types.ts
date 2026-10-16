@@ -165,6 +165,8 @@ export interface OfficeLayout {
   areaTiles?: Array<string | null>;
   /** Painted background drawn instead of the floor tiles (see mapBackgrounds.ts). */
   background?: string;
+  /** Place name shown in the wooden banner when the map opens, e.g. "Route 1". */
+  name?: string;
 }
 
 export interface Character {
@@ -248,6 +250,8 @@ export interface Character {
   contextTokens: number;
   /** Window `contextTokens` is measured against. */
   maxContextTokens: number;
+  /** Turns finished this session; the Pokémon's level is 1 + this. */
+  tasksDone: number;
 }
 
 export const PetState = { IDLE: 'idle', WALK: 'walk', FOLLOW: 'follow' } as const;

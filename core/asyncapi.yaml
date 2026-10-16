@@ -546,22 +546,39 @@ components:
             type: string
 
     PokedexLoaded:
-      description: Reply to `requestPokedex`, listing every species (National Dex number) ever seen.
+      description: Reply to `requestPokedex`, one entry per species ever seen.
       type: object
       additionalProperties: false
-      required: [type, seen, shiny]
+      required: [type, entries]
       properties:
         type:
           const: pokedexLoaded
-        seen:
+        entries:
           type: array
           items:
-            type: integer
+            $ref: '#/components/schemas/PokedexEntry'
+
+    PokedexEntry:
+      type: object
+      additionalProperties: false
+      required: [dex, count, shiny, first, projects]
+      properties:
+        dex:
+          type: integer
+        count:
+          type: integer
+          description: Distinct agent sessions this species appeared in.
         shiny:
+          type: boolean
+          description: Seen at least once as shiny.
+        first:
+          type: string
+          description: ISO date of the first encounter.
+        projects:
           type: array
-          description: Species seen at least once as shiny.
+          description: Project folders it appeared in, most recent last.
           items:
-            type: integer
+            type: string
 
     PokemonAnimSheet:
       description: One animation sheet, with a row per direction and a column per frame.
@@ -961,7 +978,7 @@ components:
       description: A Pokémon form appeared on screen; add it to the persisted Pokédex.
       type: object
       additionalProperties: false
-      required: [type, dex, shiny]
+      required: [type, dex, shiny, seed]
       properties:
         type:
           const: recordPokemonSeen
@@ -969,6 +986,12 @@ components:
           type: integer
         shiny:
           type: boolean
+        seed:
+          type: integer
+          description: The agent's session seed, so one session counts as one encounter.
+        project:
+          type: string
+          description: Folder of the agent's project.
 
     RequestPokedex:
       description: Ask for the persisted Pokédex (answered by `pokedexLoaded`).
