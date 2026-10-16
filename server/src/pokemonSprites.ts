@@ -1,6 +1,6 @@
 /**
  * Pokémon overworld sprites from PMDCollab SpriteCollab, downloaded on demand
- * and cached under ~/.aagent/pokemon/ so each species is fetched once.
+ * and cached under ~/.pokeagents/pokemon/ so each species is fetched once.
  *
  * Only the POKEMON_ANIMS sheets are kept (~30 KB per species) and the cache is
  * capped at POKEMON_CACHE_MAX_ENTRIES species, oldest-used evicted first.
@@ -195,7 +195,9 @@ export async function pokemonSpritesMessage(
     };
   } catch (err) {
     const error = err instanceof Error ? err.message : String(err);
-    console.error(`[aAgent] Pokémon #${dex}${shiny ? ' (shiny)' : ''} sprites failed: ${error}`);
+    console.error(
+      `[PokeAgents] Pokémon #${dex}${shiny ? ' (shiny)' : ''} sprites failed: ${error}`,
+    );
     return { type: 'pokemonSpritesLoaded', dex, shiny, anims: [], error };
   }
 }

@@ -47,15 +47,15 @@ mkdirSync(staticDir, { recursive: true });
 cpSync(reportDir, path.join(staticDir, 'reports', 'allure'), { recursive: true });
 
 // Root lands directly on the Allure dashboard (no webview to choose between).
-writeRedirectPage(path.join(staticDir, 'index.html'), 'aAgent Reports', '/reports/allure/');
+writeRedirectPage(path.join(staticDir, 'index.html'), 'PokeAgents Reports', '/reports/allure/');
 writeRedirectPage(
   path.join(staticDir, 'reports', 'index.html'),
-  'aAgent Reports',
+  'PokeAgents Reports',
   '/reports/allure/',
 );
 writeRedirectPage(
   path.join(staticDir, 'reports', 'e2e', 'index.html'),
-  'aAgent Reports',
+  'PokeAgents Reports',
   '/reports/allure/',
 );
 

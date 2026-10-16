@@ -102,7 +102,7 @@ export class SubagentWatch {
     this.store.set(id, agent);
 
     console.log(
-      `[aAgent] Watching background sub-agent transcript for lead Agent ${leadId} (${entry.toolUseId})`,
+      `[PokeAgents] Watching background sub-agent transcript for lead Agent ${leadId} (${entry.toolUseId})`,
     );
 
     startFileWatching(

@@ -1,6 +1,6 @@
 /**
  * Client copy of the persisted Pokédex. Newly seen forms are added locally at
- * once and sent to the server, which stores them in ~/.aagent/pokedex.json.
+ * once and sent to the server, which stores them in ~/.pokeagents/pokedex.json.
  */
 import { useSyncExternalStore } from 'react';
 

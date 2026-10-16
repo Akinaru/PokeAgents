@@ -32,31 +32,31 @@ describe('FileStateAdapter', () => {
 
   it('returns defaults when config file does not exist', () => {
     const adapter = new FileStateAdapter({ namespace: 'standalone' });
-    expect(adapter.getSetting('aagent.soundEnabled', false)).toBe(true);
-    expect(adapter.getSetting('aagent.watchAllSessions', true)).toBe(false);
-    expect(adapter.getSetting('aagent.lastSeenVersion', 'x')).toBe('');
+    expect(adapter.getSetting('pokeagents.soundEnabled', false)).toBe(true);
+    expect(adapter.getSetting('pokeagents.watchAllSessions', true)).toBe(false);
+    expect(adapter.getSetting('pokeagents.lastSeenVersion', 'x')).toBe('');
   });
 
   it('round-trips each namespaced setting key (hooksEnabled moved to the per-provider map)', () => {
     const adapter = new FileStateAdapter({ namespace: 'standalone' });
 
-    adapter.setSetting('aagent.soundEnabled', false);
-    adapter.setSetting('aagent.lastSeenVersion', '1.3');
-    adapter.setSetting('aagent.alwaysShowLabels', true);
-    adapter.setSetting('aagent.watchAllSessions', true);
-    adapter.setSetting('aagent.hooksInfoShown', true);
+    adapter.setSetting('pokeagents.soundEnabled', false);
+    adapter.setSetting('pokeagents.lastSeenVersion', '1.3');
+    adapter.setSetting('pokeagents.alwaysShowLabels', true);
+    adapter.setSetting('pokeagents.watchAllSessions', true);
+    adapter.setSetting('pokeagents.hooksInfoShown', true);
 
-    expect(adapter.getSetting('aagent.soundEnabled', true)).toBe(false);
-    expect(adapter.getSetting('aagent.lastSeenVersion', '')).toBe('1.3');
-    expect(adapter.getSetting('aagent.alwaysShowLabels', false)).toBe(true);
-    expect(adapter.getSetting('aagent.watchAllSessions', false)).toBe(true);
-    expect(adapter.getSetting('aagent.hooksInfoShown', false)).toBe(true);
+    expect(adapter.getSetting('pokeagents.soundEnabled', true)).toBe(false);
+    expect(adapter.getSetting('pokeagents.lastSeenVersion', '')).toBe('1.3');
+    expect(adapter.getSetting('pokeagents.alwaysShowLabels', false)).toBe(true);
+    expect(adapter.getSetting('pokeagents.watchAllSessions', false)).toBe(true);
+    expect(adapter.getSetting('pokeagents.hooksInfoShown', false)).toBe(true);
 
     // hooksEnabled is deliberately NOT an adapter key any more: it is
     // per-provider and machine-global, so the adapter ignores it and the
     // per-provider accessors own it.
-    adapter.setSetting('aagent.hooksEnabled', false);
-    expect(adapter.getSetting('aagent.hooksEnabled', true)).toBe(true);
+    adapter.setSetting('pokeagents.hooksEnabled', false);
+    expect(adapter.getSetting('pokeagents.hooksEnabled', true)).toBe(true);
     setHooksEnabled('claude', false);
     expect(getHooksEnabled('claude')).toBe(false);
   });
@@ -65,13 +65,13 @@ describe('FileStateAdapter', () => {
     const vscode = new FileStateAdapter({ namespace: 'vscode' });
     const standalone = new FileStateAdapter({ namespace: 'standalone' });
 
-    vscode.setSetting('aagent.watchAllSessions', true);
-    standalone.setSetting('aagent.watchAllSessions', false);
+    vscode.setSetting('pokeagents.watchAllSessions', true);
+    standalone.setSetting('pokeagents.watchAllSessions', false);
 
-    expect(vscode.getSetting('aagent.watchAllSessions', null)).toBe(true);
-    expect(standalone.getSetting('aagent.watchAllSessions', null)).toBe(false);
+    expect(vscode.getSetting('pokeagents.watchAllSessions', null)).toBe(true);
+    expect(standalone.getSetting('pokeagents.watchAllSessions', null)).toBe(false);
 
-    const configPath = path.join(tempHome, '.aagent', 'config.json');
+    const configPath = path.join(tempHome, '.pokeagents', 'config.json');
     const parsed = JSON.parse(fs.readFileSync(configPath, 'utf-8')) as Record<
       string,
       Record<string, unknown>
@@ -82,28 +82,28 @@ describe('FileStateAdapter', () => {
 
   it('ignores unknown setting keys (returns default, does not write)', () => {
     const adapter = new FileStateAdapter({ namespace: 'standalone' });
-    expect(adapter.getSetting('aagent.unknownKey', 'fallback')).toBe('fallback');
-    adapter.setSetting('aagent.unknownKey', 'ignored');
-    const configPath = path.join(tempHome, '.aagent', 'config.json');
+    expect(adapter.getSetting('pokeagents.unknownKey', 'fallback')).toBe('fallback');
+    adapter.setSetting('pokeagents.unknownKey', 'ignored');
+    const configPath = path.join(tempHome, '.pokeagents', 'config.json');
     expect(fs.existsSync(configPath)).toBe(false);
   });
 
   it('accepts setting keys with or without the pixel-agents. prefix', () => {
     const adapter = new FileStateAdapter({ namespace: 'standalone' });
-    adapter.setSetting('aagent.soundEnabled', false);
+    adapter.setSetting('pokeagents.soundEnabled', false);
     expect(adapter.getSetting('soundEnabled', true)).toBe(false);
     adapter.setSetting('lastSeenVersion', '1.0');
-    expect(adapter.getSetting('aagent.lastSeenVersion', '')).toBe('1.0');
+    expect(adapter.getSetting('pokeagents.lastSeenVersion', '')).toBe('1.0');
   });
 
   it('persists settings under namespace in config.json with clean field names', () => {
     const adapter = new FileStateAdapter({ namespace: 'standalone' });
-    adapter.setSetting('aagent.soundEnabled', false);
-    const configPath = path.join(tempHome, '.aagent', 'config.json');
+    adapter.setSetting('pokeagents.soundEnabled', false);
+    const configPath = path.join(tempHome, '.pokeagents', 'config.json');
     const raw = fs.readFileSync(configPath, 'utf-8');
     const parsed = JSON.parse(raw) as Record<string, Record<string, unknown>>;
     expect(parsed.standalone.soundEnabled).toBe(false);
-    expect(parsed.standalone['aagent.soundEnabled']).toBeUndefined();
+    expect(parsed.standalone['pokeagents.soundEnabled']).toBeUndefined();
   });
 
   // ── Per-namespace state file (agents + seats) ───────────────
@@ -129,10 +129,10 @@ describe('FileStateAdapter', () => {
     expect(adapter.loadAgents()).toEqual(agents);
   });
 
-  it('writes state at ~/.aagent/<namespace>-state.json', () => {
+  it('writes state at ~/.pokeagents/<namespace>-state.json', () => {
     const adapter = new FileStateAdapter({ namespace: 'vscode' });
     adapter.saveSeats({ '1': { palette: 2, hueShift: 45 } });
-    const stateFile = path.join(tempHome, '.aagent', 'vscode-state.json');
+    const stateFile = path.join(tempHome, '.pokeagents', 'vscode-state.json');
     expect(fs.existsSync(stateFile)).toBe(true);
   });
 

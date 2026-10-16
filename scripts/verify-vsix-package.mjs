@@ -63,9 +63,9 @@ exports.run = async () => {
   if (!extension) throw new Error('Packaged extension was not discoverable: ${extensionId}');
   await extension.activate();
   if (!extension.isActive) throw new Error('Packaged extension did not activate');
-  await vscode.commands.executeCommand('aagent.showPanel');
+  await vscode.commands.executeCommand('pokeagents.showPanel');
 
-  const registryDir = path.join(os.homedir(), '.aagent', 'servers');
+  const registryDir = path.join(os.homedir(), '.pokeagents', 'servers');
   const deadline = Date.now() + 10_000;
   while (Date.now() < deadline) {
     try {

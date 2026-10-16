@@ -61,7 +61,7 @@ export interface ClientMessageContext {
   /** Reload assets after an external-asset-directory change. Needs the dist root, known only to cli.ts. */
   onReloadAssets?: ReloadAssetsSideEffect;
   /**
-   * Whether this client may send messages that reach OUTSIDE `~/.aagent/`
+   * Whether this client may send messages that reach OUTSIDE `~/.pokeagents/`
    * — today only `setHooksEnabled`, which grants machine-wide consent to modify
    * `~/.claude/settings.json`. Decided per-connection by the transport
    * (httpServer's standaloneTokenValid, or the embedded Bearer token); defaults
@@ -71,13 +71,13 @@ export interface ClientMessageContext {
 }
 
 // ── Setting key constants (mirror adapters/vscode/constants.ts) ──
-const KEY_SOUND_ENABLED = 'aagent.soundEnabled';
-const KEY_LAST_SEEN_VERSION = 'aagent.lastSeenVersion';
-const KEY_ALWAYS_SHOW_LABELS = 'aagent.alwaysShowLabels';
-const KEY_GHOST_HEADLESS_AGENTS = 'aagent.ghostHeadlessAgents';
-const KEY_WATCH_ALL_SESSIONS = 'aagent.watchAllSessions';
-const KEY_HOOKS_INFO_SHOWN = 'aagent.hooksInfoShown';
-const KEY_SHOW_AREAS = 'aagent.showAreas';
+const KEY_SOUND_ENABLED = 'pokeagents.soundEnabled';
+const KEY_LAST_SEEN_VERSION = 'pokeagents.lastSeenVersion';
+const KEY_ALWAYS_SHOW_LABELS = 'pokeagents.alwaysShowLabels';
+const KEY_GHOST_HEADLESS_AGENTS = 'pokeagents.ghostHeadlessAgents';
+const KEY_WATCH_ALL_SESSIONS = 'pokeagents.watchAllSessions';
+const KEY_HOOKS_INFO_SHOWN = 'pokeagents.hooksInfoShown';
+const KEY_SHOW_AREAS = 'pokeagents.showAreas';
 
 /**
  * Handle incoming ClientMessage from a WebSocket client.
@@ -217,7 +217,7 @@ export function handleClientMessage(
         // Answer with the truth so the checkbox still shows reality instead of
         // silently appearing to have worked.
         console.warn(
-          '[aAgent] Ignoring setHooksEnabled from an untokened client — installing hooks needs approval from this machine (open the tokened URL the CLI printed).',
+          '[PokeAgents] Ignoring setHooksEnabled from an untokened client — installing hooks needs approval from this machine (open the tokened URL the CLI printed).',
         );
         void provider
           .areHooksInstalled()
@@ -234,7 +234,7 @@ export function handleClientMessage(
       // reasoning as setHooksEnabled above.
       if (!ctx.privileged) {
         console.warn(
-          '[aAgent] Ignoring hooksConsentResponse from an untokened client — installing hooks needs approval from this machine (open the tokened URL the CLI printed).',
+          '[PokeAgents] Ignoring hooksConsentResponse from an untokened client — installing hooks needs approval from this machine (open the tokened URL the CLI printed).',
         );
         break;
       }
@@ -331,7 +331,7 @@ async function applyHooksPreference(
     // not outcome (the installer refuses to touch an unparseable file).
     send({ type: 'hooksStatus', providerId: provider.id, installed });
   } catch (err) {
-    console.error('[aAgent] Applying the hooks preference failed:', err);
+    console.error('[PokeAgents] Applying the hooks preference failed:', err);
   }
 }
 
@@ -354,7 +354,7 @@ function standaloneConsentEffects(
       try {
         await ctx.onSetHooksEnabled?.(provider.id, false);
       } catch (err) {
-        console.error('[aAgent] Hook uninstall failed:', err);
+        console.error('[PokeAgents] Hook uninstall failed:', err);
       }
     },
     areHooksInstalled: () => provider.areHooksInstalled(),
@@ -464,7 +464,7 @@ function handleWebviewReady(send: WsSend, ctx: ClientMessageContext): void {
     void provider
       .areHooksInstalled()
       .catch((err: unknown) => {
-        console.error(`[aAgent] hooks status check failed for provider ${provider.id}:`, err);
+        console.error(`[PokeAgents] hooks status check failed for provider ${provider.id}:`, err);
         return false;
       })
       .then((installed) => {

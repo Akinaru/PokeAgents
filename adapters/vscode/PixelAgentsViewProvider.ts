@@ -117,7 +117,7 @@ export class PixelAgentsViewProvider implements vscode.WebviewViewProvider {
   // Cross-window layout sync
   layoutWatcher: LayoutWatcher | null = null;
 
-  // aAgent Server (hook event reception)
+  // PokeAgents Server (hook event reception)
   private pixelAgentsServer: PixelAgentsServer | null = null;
   private adapter: StateAdapter;
 
@@ -216,7 +216,7 @@ export class PixelAgentsViewProvider implements vscode.WebviewViewProvider {
     }
     if (this.pendingBroadcasts.length >= MAX_PENDING_BROADCASTS) {
       console.warn(
-        `[aAgent] Webview buffer overflow (${MAX_PENDING_BROADCASTS}). webviewReady never arrived — dropping oldest message.`,
+        `[PokeAgents] Webview buffer overflow (${MAX_PENDING_BROADCASTS}). webviewReady never arrived — dropping oldest message.`,
       );
       this.pendingBroadcasts.shift();
     }
@@ -242,10 +242,10 @@ export class PixelAgentsViewProvider implements vscode.WebviewViewProvider {
         if (hooksEnabled) {
           void this.installHooksIfConsented(config.port, config.token);
         }
-        console.log(`[aAgent] Server: ready on port ${config.port}`);
+        console.log(`[PokeAgents] Server: ready on port ${config.port}`);
       })
       .catch((e) => {
-        console.error(`[aAgent] Failed to start server: ${e}`);
+        console.error(`[PokeAgents] Failed to start server: ${e}`);
       });
   }
 
@@ -266,7 +266,7 @@ export class PixelAgentsViewProvider implements vscode.WebviewViewProvider {
     // another provider's install must neither copy it nor be blocked by it.
     if (provider.id === claudeProvider.id && !copyHookScript(this.context.extensionPath)) {
       vscode.window.showErrorMessage(
-        'aAgent: could not install the hook script — hooks not installed.',
+        'PokeAgents: could not install the hook script — hooks not installed.',
       );
       await this.reportHooksStatus(provider);
       return;
@@ -277,7 +277,9 @@ export class PixelAgentsViewProvider implements vscode.WebviewViewProvider {
         token ?? '',
       );
     } catch (err: unknown) {
-      vscode.window.showErrorMessage(`aAgent: ${err instanceof Error ? err.message : String(err)}`);
+      vscode.window.showErrorMessage(
+        `PokeAgents: ${err instanceof Error ? err.message : String(err)}`,
+      );
       await this.reportHooksStatus(provider);
       return;
     }
@@ -308,7 +310,7 @@ export class PixelAgentsViewProvider implements vscode.WebviewViewProvider {
         await provider.uninstallHooks();
       } catch (err: unknown) {
         vscode.window.showErrorMessage(
-          `aAgent: ${err instanceof Error ? err.message : String(err)}`,
+          `PokeAgents: ${err instanceof Error ? err.message : String(err)}`,
         );
       }
     }
@@ -327,7 +329,7 @@ export class PixelAgentsViewProvider implements vscode.WebviewViewProvider {
       // follows only the Claude provider until the scanners grow per-provider
       // awareness alongside the Settings UI.
       if (provider.id === claudeProvider.id) this.runtime.hooksEnabled.current = enabled;
-      console.log(`[aAgent] Hooks ${enabled ? 'enabled' : 'disabled'} by user`);
+      console.log(`[PokeAgents] Hooks ${enabled ? 'enabled' : 'disabled'} by user`);
     }
     // Report the truth either way: on failure the entries are still on disk and
     // still firing, and a checkbox stuck "off" over live hooks offers no retry.
@@ -400,7 +402,7 @@ export class PixelAgentsViewProvider implements vscode.WebviewViewProvider {
           await provider.uninstallHooks();
         } catch (err: unknown) {
           vscode.window.showErrorMessage(
-            `aAgent: ${err instanceof Error ? err.message : String(err)}`,
+            `PokeAgents: ${err instanceof Error ? err.message : String(err)}`,
           );
         }
       },
@@ -478,7 +480,7 @@ export class PixelAgentsViewProvider implements vscode.WebviewViewProvider {
         }
       } else if (message.type === 'saveAgentSeats') {
         // Store seat assignments in a separate key (never touched by persistAgents)
-        console.log(`[aAgent] State: saveAgentSeats:`, JSON.stringify(message.seats));
+        console.log(`[PokeAgents] State: saveAgentSeats:`, JSON.stringify(message.seats));
         this.adapter.saveSeats(message.seats);
       } else if (message.type === 'saveLayout') {
         this.layoutWatcher?.markOwnWrite();
@@ -620,7 +622,10 @@ export class PixelAgentsViewProvider implements vscode.WebviewViewProvider {
           // choice uninstalls on a guess) rather than aborting the handshake before restored agents are sent, or
           // blocking the other providers' statuses.
           const installed = await provider.areHooksInstalled().catch((err: unknown) => {
-            console.error(`[aAgent] hooks status check failed for provider ${provider.id}:`, err);
+            console.error(
+              `[PokeAgents] hooks status check failed for provider ${provider.id}:`,
+              err,
+            );
             return false;
           });
           this.webview?.postMessage({
@@ -674,9 +679,9 @@ export class PixelAgentsViewProvider implements vscode.WebviewViewProvider {
           this.store.size === 0
         ) {
           this.autoSpawnAttempted = true;
-          console.log('[aAgent] Auto-spawning agent on startup');
+          console.log('[PokeAgents] Auto-spawning agent on startup');
           // When the user also opted into autoShowPanel, skip terminal.show()
-          // so the panel view stays on aAgent. The terminal still runs;
+          // so the panel view stays on PokeAgents. The terminal still runs;
           // clicking the character focuses it via the focusAgent handler.
           const autoShowPanel = vscode.workspace
             .getConfiguration()
@@ -722,7 +727,7 @@ export class PixelAgentsViewProvider implements vscode.WebviewViewProvider {
         // Ensure project scan runs even with no restored agents (to adopt external terminals)
         const projectDir = getProjectDirPath();
         const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-        console.log(`[aAgent] Debug: Platform: ${process.platform}, arch: ${process.arch}`);
+        console.log(`[PokeAgents] Debug: Platform: ${process.platform}, arch: ${process.arch}`);
         console.log('[Extension] workspaceRoot:', workspaceRoot);
         console.log('[Extension] projectDir:', projectDir);
         this.runtime.startProjectScan(projectDir);
@@ -736,7 +741,7 @@ export class PixelAgentsViewProvider implements vscode.WebviewViewProvider {
           for (const folder of wsFolders) {
             const folderProjectDir = getProjectDirPath(folder.uri.fsPath);
             if (folderProjectDir && folderProjectDir !== projectDir) {
-              console.log(`[aAgent] Registering additional project dir: ${folderProjectDir}`);
+              console.log(`[PokeAgents] Registering additional project dir: ${folderProjectDir}`);
               this.runtime.startProjectScan(folderProjectDir);
             }
           }
@@ -864,7 +869,7 @@ export class PixelAgentsViewProvider implements vscode.WebviewViewProvider {
       } else if (message.type === 'exportLayout') {
         const layout = readLayoutFromFile();
         if (!layout) {
-          vscode.window.showWarningMessage('aAgent: No saved layout to export.');
+          vscode.window.showWarningMessage('PokeAgents: No saved layout to export.');
           return;
         }
         const uri = await vscode.window.showSaveDialog({
@@ -873,7 +878,7 @@ export class PixelAgentsViewProvider implements vscode.WebviewViewProvider {
         });
         if (uri) {
           fs.writeFileSync(uri.fsPath, JSON.stringify(layout, null, 2), 'utf-8');
-          vscode.window.showInformationMessage('aAgent: Layout exported successfully.');
+          vscode.window.showInformationMessage('PokeAgents: Layout exported successfully.');
         }
       } else if (message.type === 'addExternalAssetDirectory') {
         const uris = await vscode.window.showOpenDialog({
@@ -919,15 +924,15 @@ export class PixelAgentsViewProvider implements vscode.WebviewViewProvider {
           const raw = fs.readFileSync(uris[0].fsPath, 'utf-8');
           const imported = JSON.parse(raw) as Record<string, unknown>;
           if (imported.version !== 1 || !Array.isArray(imported.tiles)) {
-            vscode.window.showErrorMessage('aAgent: Invalid layout file.');
+            vscode.window.showErrorMessage('PokeAgents: Invalid layout file.');
             return;
           }
           this.layoutWatcher?.markOwnWrite();
           writeLayoutToFile(imported);
           this.webview?.postMessage({ type: 'layoutLoaded', layout: imported });
-          vscode.window.showInformationMessage('aAgent: Layout imported successfully.');
+          vscode.window.showInformationMessage('PokeAgents: Layout imported successfully.');
         } catch {
-          vscode.window.showErrorMessage('aAgent: Failed to read or parse layout file.');
+          vscode.window.showErrorMessage('PokeAgents: Failed to read or parse layout file.');
         }
       }
     });
@@ -967,12 +972,12 @@ export class PixelAgentsViewProvider implements vscode.WebviewViewProvider {
   exportDefaultLayout(): void {
     const layout = readLayoutFromFile();
     if (!layout) {
-      vscode.window.showWarningMessage('aAgent: No saved layout found.');
+      vscode.window.showWarningMessage('PokeAgents: No saved layout found.');
       return;
     }
     const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
     if (!workspaceRoot) {
-      vscode.window.showErrorMessage('aAgent: No workspace folder found.');
+      vscode.window.showErrorMessage('PokeAgents: No workspace folder found.');
       return;
     }
     const assetsDir = path.join(workspaceRoot, 'webview-ui', 'public', 'assets');
@@ -994,7 +999,7 @@ export class PixelAgentsViewProvider implements vscode.WebviewViewProvider {
     const json = JSON.stringify(layout, null, 2);
     fs.writeFileSync(targetPath, json, 'utf-8');
     vscode.window.showInformationMessage(
-      `aAgent: Default layout exported as revision ${nextRevision} to ${targetPath}`,
+      `PokeAgents: Default layout exported as revision ${nextRevision} to ${targetPath}`,
     );
   }
 
@@ -1061,7 +1066,7 @@ export class PixelAgentsViewProvider implements vscode.WebviewViewProvider {
   private startLayoutWatcher(): void {
     if (this.layoutWatcher) return;
     this.layoutWatcher = watchLayoutFile((layout) => {
-      console.log('[aAgent] External layout change — pushing to webview');
+      console.log('[PokeAgents] External layout change — pushing to webview');
       this.webview?.postMessage({ type: 'layoutLoaded', layout });
     });
   }

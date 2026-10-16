@@ -41,9 +41,9 @@ export interface LaunchOptions {
    * (single-folder default is unchanged).
    */
   workspaceFolders?: string[];
-  /** Pre-seed `~/.aagent/config.json` (written before the server reads it). */
+  /** Pre-seed `~/.pokeagents/config.json` (written before the server reads it). */
   seedConfig?: unknown;
-  /** Pre-seed `~/.aagent/layout.json` (written before the panel loads). */
+  /** Pre-seed `~/.pokeagents/layout.json` (written before the panel loads). */
   seedLayout?: unknown;
   /**
    * Pre-seed `~/.claude/settings.json` (written before the extension activates).
@@ -79,7 +79,7 @@ export async function launchVSCode(
   fs.mkdirSync(mockBinDir, { recursive: true });
 
   // Pre-seed user-level config/layout under the isolated HOME, BEFORE VS Code
-  // launches — the server reads ~/.aagent/{config,layout}.json on startup,
+  // launches — the server reads ~/.pokeagents/{config,layout}.json on startup,
   // so a test that needs specific areaMappings / showAreas / a known layout must
   // write them now. layout.json must carry a high layoutRevision to survive the
   // bundled-default reset gate (server/src/layoutPersistence.ts).
@@ -90,7 +90,7 @@ export async function launchVSCode(
   // through the Settings modal. Missing keys are filled with product defaults
   // by server/src/configPersistence.ts. Tests override via opts.seedConfig
   // (buildSeedConfig in layout-seed.ts carries the same baseline).
-  const paDir = path.join(tmpHome, '.aagent');
+  const paDir = path.join(tmpHome, '.pokeagents');
   fs.mkdirSync(paDir, { recursive: true });
   // The granted hooksConsent entry is part of the baseline: without it the first-run consent
   // dialog pops up inside the webview on open, gating hook installation and
@@ -250,7 +250,7 @@ export async function launchVSCode(
   fs.mkdirSync(userSettingsDir, { recursive: true });
   const userSettings: Record<string, unknown> = {
     'workbench.panel.defaultLocation': 'left',
-    'aagent.autoShowPanel': true,
+    'pokeagents.autoShowPanel': true,
     'terminal.integrated.defaultLocation': 'editor',
     'workbench.activityBar.location': 'hidden',
     'workbench.startupEditor': 'none',
@@ -274,7 +274,7 @@ export async function launchVSCode(
           // path must be set explicitly here or the mock-spawned
           // claude-hook.js (which runs in this terminal) can't write to
           // it. Path matches the `debugLogFile` const below.
-          PIXEL_AGENTS_DEBUG_LOG: path.join(tmpHome, '.aagent', 'debug.log'),
+          PIXEL_AGENTS_DEBUG_LOG: path.join(tmpHome, '.pokeagents', 'debug.log'),
           // Narration log paths for the mock-claude wrapper's background tail
           // (see e2e/fixtures/mock-claude). inheritEnv:false means these must
           // be set on the profile too, or internal mock tabs are silently
@@ -326,7 +326,7 @@ export async function launchVSCode(
   // attaches it as `pixel-agents-debug-log` so CI failure analysis can read
   // the exact event timeline. Per-test isolated under tmpHome so parallel
   // workers don't interleave (though e2e uses workers=1 anyway).
-  const debugLogFile = path.join(tmpHome, '.aagent', 'debug.log');
+  const debugLogFile = path.join(tmpHome, '.pokeagents', 'debug.log');
   fs.mkdirSync(path.dirname(debugLogFile), { recursive: true });
 
   const env: Record<string, string> = {

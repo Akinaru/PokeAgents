@@ -141,7 +141,7 @@ export function startPermissionTimer(
 
     if (hasNonExempt) {
       agent.permissionSent = true;
-      console.log(`[aAgent] Timer: Agent ${agentId} - possible permission wait detected`);
+      console.log(`[PokeAgents] Timer: Agent ${agentId} - possible permission wait detected`);
       agents.broadcast({
         type: 'agentToolPermission',
         id: agentId,

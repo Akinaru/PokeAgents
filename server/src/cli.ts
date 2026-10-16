@@ -27,6 +27,7 @@ import {
 } from './configPersistence.js';
 import { MAX_PORT, MIN_PORT } from './constants.js';
 import { FileStateAdapter } from './fileStateAdapter.js';
+import { migrateLegacyDataDir } from './legacyDataDir.js';
 import { loadAllMapBackgrounds } from './mapBackgrounds.js';
 import { claudeProvider, copyHookScript, hookProviderById } from './providers/index.js';
 import { PixelAgentsServer } from './server.js';
@@ -89,7 +90,7 @@ Options:
 // migration below (our hooks already installed by a pre-consent version).
 
 /**
- * Copy the bundled hook script into ~/.aagent/hooks/, reporting failure.
+ * Copy the bundled hook script into ~/.pokeagents/hooks/, reporting failure.
  *
  * Callers run this BEFORE installing the settings.json entries and abort when
  * it returns false: an entry whose command points at a missing script makes
@@ -98,7 +99,7 @@ Options:
  */
 function copyHookScriptOrReport(packageRoot: string, context = ''): boolean {
   if (copyHookScript(packageRoot)) return true;
-  console.error(`[aAgent] Hooks NOT installed${context}: hook script missing.`);
+  console.error(`[PokeAgents] Hooks NOT installed${context}: hook script missing.`);
   return false;
 }
 
@@ -109,9 +110,12 @@ async function main(): Promise<void> {
   try {
     args = parseArgs(process.argv.slice(2));
   } catch (err) {
-    console.error(`[aAgent] ${err instanceof Error ? err.message : String(err)}`);
+    console.error(`[PokeAgents] ${err instanceof Error ? err.message : String(err)}`);
     process.exit(1);
   }
+
+  // Carry ~/.aagent over from before the rename, before anything reads the data folder.
+  migrateLegacyDataDir();
 
   // dist/ contains both the CLI bundle and the assets/ + webview/ directories
   const distRoot = __dirname;
@@ -122,7 +126,7 @@ async function main(): Promise<void> {
   // External asset directories are merged at startup too, so directories added
   // in a previous session survive a restart. buildAssetCache is the shared
   // loader used by both the standalone server and the VS Code adapter.
-  console.log('[aAgent] Loading assets...');
+  console.log('[PokeAgents] Loading assets...');
   const assetCache: AssetCache = await buildAssetCache(
     distRoot,
     readConfig().externalAssetDirectories,
@@ -131,7 +135,7 @@ async function main(): Promise<void> {
   const petCount = assetCache.pets?.pets.length ?? 0;
   const furnitureCount = assetCache.furniture?.catalog.length ?? 0;
   console.log(
-    `[aAgent] Assets loaded: ${charCount} characters, ${petCount} pets, ${furnitureCount} furniture items`,
+    `[PokeAgents] Assets loaded: ${charCount} characters, ${petCount} pets, ${furnitureCount} furniture items`,
   );
 
   // ── Store + adapter (shared settings + standalone-scoped agents/seats) ──
@@ -177,16 +181,16 @@ async function main(): Promise<void> {
             currentConfig.token,
           );
         } catch (err) {
-          console.error(`[aAgent] ${err instanceof Error ? err.message : String(err)}`);
+          console.error(`[PokeAgents] ${err instanceof Error ? err.message : String(err)}`);
           return;
         }
-        console.log('[aAgent] Hooks installed (user toggle)');
+        console.log('[PokeAgents] Hooks installed (user toggle)');
       } else {
         try {
           await provider.uninstallHooks();
-          console.log('[aAgent] Hooks uninstalled (user toggle)');
+          console.log('[PokeAgents] Hooks uninstalled (user toggle)');
         } catch (err) {
-          console.error(`[aAgent] ${err instanceof Error ? err.message : String(err)}`);
+          console.error(`[PokeAgents] ${err instanceof Error ? err.message : String(err)}`);
         }
       }
     };
@@ -227,7 +231,7 @@ async function main(): Promise<void> {
         });
       }
       send({ type: 'mapBackgroundsLoaded', backgrounds: assetCache.mapBackgrounds });
-      console.log('[aAgent] Assets reloaded (external directory change)');
+      console.log('[PokeAgents] Assets reloaded (external directory change)');
     };
 
     const config = await server.start({
@@ -247,7 +251,7 @@ async function main(): Promise<void> {
     // runtime's single hooksEnabled ref follows the Claude provider until the
     // scanners grow per-provider awareness alongside the Settings UI.
     runtime.hooksEnabled.current = getHooksEnabled(claudeProvider.id);
-    runtime.watchAllSessions.current = adapter.getSetting('aagent.watchAllSessions', false);
+    runtime.watchAllSessions.current = adapter.getSetting('pokeagents.watchAllSessions', false);
 
     // Install hooks on startup if the persisted setting says so — gated on the
     // one-time consent to modify ~/.claude/settings.json.
@@ -267,21 +271,21 @@ async function main(): Promise<void> {
       }
       if (!consent) {
         console.log(
-          '[aAgent] Hooks not installed: modifying ~/.claude/settings.json needs one-time approval — open the URL below to review and approve it.',
+          '[PokeAgents] Hooks not installed: modifying ~/.claude/settings.json needs one-time approval — open the URL below to review and approve it.',
         );
       } else if (copyHookScriptOrReport(packageRoot)) {
         try {
           await claudeProvider.installHooks(`http://127.0.0.1:${config.port}`, config.token);
-          console.log('[aAgent] Hooks installed');
+          console.log('[PokeAgents] Hooks installed');
         } catch (err) {
-          console.error(`[aAgent] ${err instanceof Error ? err.message : String(err)}`);
+          console.error(`[PokeAgents] ${err instanceof Error ? err.message : String(err)}`);
         }
       }
     } else {
       // Without this line, a persisted hooks-off makes startup skip the entire
       // consent/install flow with zero output — indistinguishable from a bug.
       console.log(
-        '[aAgent] Hooks disabled — enable "Instant Detection (Hooks)" in the UI settings to install them.',
+        '[PokeAgents] Hooks disabled — enable "Instant Detection (Hooks)" in the UI settings to install them.',
       );
     }
 
@@ -290,7 +294,7 @@ async function main(): Promise<void> {
     const dirs = claudeProvider.getSessionDirs?.(cwd);
     if (dirs && dirs[0]) {
       const projectDir = dirs[0];
-      console.log(`[aAgent] Scanning project dir: ${projectDir}`);
+      console.log(`[PokeAgents] Scanning project dir: ${projectDir}`);
       runtime.startProjectScan(projectDir);
       runtime.startExternalScanning(projectDir);
       runtime.startStaleCheck();
@@ -306,7 +310,7 @@ async function main(): Promise<void> {
     const displayHost =
       args.host === '0.0.0.0' || args.host === '::' || args.host === '' ? '127.0.0.1' : args.host;
     console.log(
-      `\n  aAgent server running at http://${displayHost}:${config.port}/?token=${config.token}\n`,
+      `\n  PokeAgents server running at http://${displayHost}:${config.port}/?token=${config.token}\n`,
     );
 
     // ── Graceful shutdown ──

@@ -1,13 +1,13 @@
 {
-  "name": "aagent",
-  "displayName": "aAgent",
+  "name": "pokeagents",
+  "displayName": "PokeAgents",
   "description": "Your Claude Code agents become pixel-art creatures working on a route. Unofficial, non-commercial fan project, not affiliated with Nintendo, The Pokémon Company or Anthropic.",
   "author": {
     "name": "Maxime Gallotta"
   },
-  "homepage": "https://github.com/Akinaru/aAgent#readme",
+  "homepage": "https://github.com/Akinaru/PokeAgents#readme",
   "bugs": {
-    "url": "https://github.com/Akinaru/aAgent/issues"
+    "url": "https://github.com/Akinaru/PokeAgents/issues"
   },
   "keywords": [
     "claude",
@@ -20,7 +20,7 @@
   "publisher": "akinaru",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Akinaru/aAgent"
+    "url": "https://github.com/Akinaru/PokeAgents"
   },
   "workspaces": [
     "server",
@@ -43,7 +43,7 @@
   ],
   "main": "./dist/extension.js",
   "bin": {
-    "aagent": "./dist/cli.js"
+    "pokeagents": "./dist/cli.js"
   },
   "files": [
     "CHANGELOG.md",
@@ -60,41 +60,41 @@
   "contributes": {
     "commands": [
       {
-        "command": "aagent.showPanel",
-        "title": "aAgent: Show Panel"
+        "command": "pokeagents.showPanel",
+        "title": "PokeAgents: Show Panel"
       },
       {
-        "command": "aagent.exportDefaultLayout",
-        "title": "aAgent: Export Layout as Default"
+        "command": "pokeagents.exportDefaultLayout",
+        "title": "PokeAgents: Export Layout as Default"
       }
     ],
     "viewsContainers": {
       "panel": [
         {
-          "id": "aagent-panel",
-          "title": "aAgent",
+          "id": "pokeagents-panel",
+          "title": "PokeAgents",
           "icon": "$(window)"
         }
       ]
     },
     "views": {
-      "aagent-panel": [
+      "pokeagents-panel": [
         {
           "type": "webview",
-          "id": "aagent.panelView",
-          "name": "aAgent"
+          "id": "pokeagents.panelView",
+          "name": "PokeAgents"
         }
       ]
     },
     "configuration": {
-      "title": "aAgent",
+      "title": "PokeAgents",
       "properties": {
-        "aagent.autoShowPanel": {
+        "pokeagents.autoShowPanel": {
           "type": "boolean",
           "default": false,
-          "description": "Automatically open and focus the aAgent panel when VS Code starts."
+          "description": "Automatically open and focus the PokeAgents panel when VS Code starts."
         },
-        "aagent.autoSpawnAgent": {
+        "pokeagents.autoSpawnAgent": {
           "type": "boolean",
           "default": false,
           "description": "Automatically spawn a Claude Code agent when VS Code starts, if no agents are currently running."

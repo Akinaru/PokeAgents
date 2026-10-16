@@ -71,7 +71,7 @@ export const test = base.extend<{
       await attachTextFileIfExists(
         testInfo,
         'server-json',
-        path.join(standalone.tmpHome, '.aagent', 'server.json'),
+        path.join(standalone.tmpHome, '.pokeagents', 'server.json'),
         'application/json',
       );
 

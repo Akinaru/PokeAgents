@@ -173,7 +173,7 @@ test('never reaches the persisted seat payload', () => {
   assert.equal(
     GREETER_ID.toString() in seats,
     false,
-    'a greeter entry would outlive the ask in ~/.aagent state',
+    'a greeter entry would outlive the ask in ~/.pokeagents state',
   );
 });
 

@@ -2,10 +2,10 @@
  * FileStateAdapter: shared StateAdapter implementation for both VS Code and standalone.
  *
  * Settings (per adapter namespace) persist to
- *   ~/.aagent/config.json  under keys "vscode" or "standalone".
+ *   ~/.pokeagents/config.json  under keys "vscode" or "standalone".
  *
  * Agents + seats (per adapter) persist to
- *   ~/.aagent/<namespace>-state.json
+ *   ~/.pokeagents/<namespace>-state.json
  *
  * Runtime visibility (which agents show in the office) is scope-controlled by the
  * runtime scanner + Watch All Sessions toggle, not by persistence. Both adapters
@@ -25,9 +25,9 @@ import { LAYOUT_FILE_DIR } from './constants.js';
 
 const ADAPTER_SETTING_KEY_SET: ReadonlySet<string> = new Set(ADAPTER_SETTING_KEYS);
 
-/** Strip leading "aagent." prefix to match AdapterSettings field names. */
+/** Strip leading "pokeagents." prefix to match AdapterSettings field names. */
 function settingNameOf(key: string): AdapterSettingKey | null {
-  const bare = key.startsWith('aagent.') ? key.slice('aagent.'.length) : key;
+  const bare = key.startsWith('pokeagents.') ? key.slice('pokeagents.'.length) : key;
   return ADAPTER_SETTING_KEY_SET.has(bare) ? (bare as AdapterSettingKey) : null;
 }
 
@@ -112,7 +112,7 @@ export class FileStateAdapter implements StateAdapter {
             : {},
       };
     } catch (err) {
-      console.error('[aAgent] Failed to read adapter state:', err);
+      console.error('[PokeAgents] Failed to read adapter state:', err);
       return { ...EMPTY_STATE };
     }
   }
@@ -128,7 +128,7 @@ export class FileStateAdapter implements StateAdapter {
       fs.writeFileSync(tmpPath, json, 'utf-8');
       fs.renameSync(tmpPath, this.stateFilePath);
     } catch (err) {
-      console.error('[aAgent] Failed to write adapter state:', err);
+      console.error('[PokeAgents] Failed to write adapter state:', err);
     }
   }
 }

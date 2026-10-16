@@ -63,11 +63,11 @@ describe('Pokémon request validation and seeds', () => {
 describe('Pokédex persistence', () => {
   let home: string;
   let previousHome: string | undefined;
-  const file = () => path.join(home, '.aagent', 'pokedex.json');
+  const file = () => path.join(home, '.pokeagents', 'pokedex.json');
 
   beforeEach(() => {
     previousHome = process.env.HOME;
-    home = fs.mkdtempSync(path.join(os.tmpdir(), 'aagent-pokedex-'));
+    home = fs.mkdtempSync(path.join(os.tmpdir(), 'pokeagents-pokedex-'));
     process.env.HOME = home;
   });
 
@@ -81,8 +81,8 @@ describe('Pokédex persistence', () => {
   });
 
   it('counts one encounter per session seed, sorted by dex', () => {
-    recordPokemonSeen(25, false, 111, 'aAgent');
-    recordPokemonSeen(25, false, 111, 'aAgent'); // same session again (reload)
+    recordPokemonSeen(25, false, 111, 'PokeAgents');
+    recordPokemonSeen(25, false, 111, 'PokeAgents'); // same session again (reload)
     recordPokemonSeen(25, false, 222, 'docs');
     recordPokemonSeen(1, false, 333, undefined);
     const dex = readPokedex();
@@ -90,7 +90,7 @@ describe('Pokédex persistence', () => {
       [1, 1],
       [25, 2],
     ]);
-    expect(dex[1].projects).toEqual(['aAgent', 'docs']);
+    expect(dex[1].projects).toEqual(['PokeAgents', 'docs']);
     expect(Date.parse(dex[1].first)).not.toBeNaN();
   });
 

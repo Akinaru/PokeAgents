@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 
 import { FileStateAdapter } from '../../server/src/fileStateAdapter.js';
+import { migrateLegacyDataDir } from '../../server/src/legacyDataDir.js';
 import {
   COMMAND_EXPORT_DEFAULT_LAYOUT,
   COMMAND_SHOW_PANEL,
@@ -13,9 +14,12 @@ import { PixelAgentsViewProvider } from './PixelAgentsViewProvider.js';
 let providerInstance: PixelAgentsViewProvider | undefined;
 
 export function activate(context: vscode.ExtensionContext) {
-  console.log(`[aAgent] PIXEL_AGENTS_DEBUG=${process.env.PIXEL_AGENTS_DEBUG ?? 'not set'}`);
+  console.log(`[PokeAgents] PIXEL_AGENTS_DEBUG=${process.env.PIXEL_AGENTS_DEBUG ?? 'not set'}`);
 
-  // Shared file-backed state adapter (VS Code namespace in ~/.aagent/config.json).
+  // Carry ~/.aagent over from before the rename, before anything reads the data folder.
+  migrateLegacyDataDir();
+
+  // Shared file-backed state adapter (VS Code namespace in ~/.pokeagents/config.json).
   const adapter = new FileStateAdapter({ namespace: 'vscode' });
 
   // One-time migration from legacy workspaceState/globalState. Idempotent; runs every
@@ -39,7 +43,7 @@ export function activate(context: vscode.ExtensionContext) {
     }),
   );
 
-  // Auto-show panel: focus the aAgent panel on startup if the user has
+  // Auto-show panel: focus the PokeAgents panel on startup if the user has
   // opted in via the pixel-agents.autoShowPanel setting.
   const config = vscode.workspace.getConfiguration();
   if (config.get<boolean>(CONFIG_KEY_AUTO_SHOW_PANEL, false)) {

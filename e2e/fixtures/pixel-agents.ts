@@ -66,9 +66,9 @@ function removeDirIfExists(dirPath: string | undefined): void {
 export const test = base.extend<{
   pixelAgents: PixelAgentsContext;
   _allureLabels: void;
-  /** Pre-seed `~/.aagent/config.json` (e.g. areaMappings, showAreas). */
+  /** Pre-seed `~/.pokeagents/config.json` (e.g. areaMappings, showAreas). */
   seedConfig: unknown;
-  /** Pre-seed `~/.aagent/layout.json` (must carry a high layoutRevision). */
+  /** Pre-seed `~/.pokeagents/layout.json` (must carry a high layoutRevision). */
   seedLayout: unknown;
   /** Pre-seed `~/.claude/settings.json` (e.g. an existing hook install). */
   seedClaudeSettings: unknown;
@@ -161,7 +161,7 @@ export const test = base.extend<{
         await attachTextFileIfExists(
           testInfo,
           'server-json',
-          path.join(tmpHome, '.aagent', 'server.json'),
+          path.join(tmpHome, '.pokeagents', 'server.json'),
           'application/json',
         );
         // Diagnostic: server-side hook/broadcast log (gated by PIXEL_AGENTS_DEBUG_LOG
@@ -170,7 +170,7 @@ export const test = base.extend<{
         await attachTextFileIfExists(
           testInfo,
           'pixel-agents-debug-log',
-          path.join(tmpHome, '.aagent', 'debug.log'),
+          path.join(tmpHome, '.pokeagents', 'debug.log'),
           'text/plain',
         );
         // Webview-side counterpart: every transport message the webview's

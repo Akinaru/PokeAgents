@@ -116,7 +116,7 @@ export function processTranscriptLine(
       agent.leadAgentId = undefined;
       if (debug) {
         console.log(
-          `[aAgent] Agent ${agentId} team metadata: team=${agent.teamName}, role=${agent.agentName ?? 'lead'}`,
+          `[PokeAgents] Agent ${agentId} team metadata: team=${agent.teamName}, role=${agent.agentName ?? 'lead'}`,
         );
       }
       // Link teammates to leads within the same team
@@ -158,7 +158,7 @@ export function processTranscriptLine(
           if (block.type === 'tool_use' && block.id) {
             const toolName = block.name || '';
             const status = formatToolStatus(toolName, block.input || {});
-            console.log(`[aAgent] JSONL: Agent ${agentId} - tool start: ${block.id} ${status}`);
+            console.log(`[PokeAgents] JSONL: Agent ${agentId} - tool start: ${block.id} ${status}`);
             agent.activeToolIds.add(block.id);
             agent.activeToolStatuses.set(block.id, status);
             agent.activeToolNames.set(block.id, toolName);
@@ -253,7 +253,7 @@ export function processTranscriptLine(
     } else if (record.type === 'assistant' && assistantContent === undefined) {
       // Assistant record with no recognizable content structure
       console.warn(
-        `[aAgent] Agent ${agentId}: assistant record has no content. Keys: ${Object.keys(record).join(', ')}`,
+        `[PokeAgents] Agent ${agentId}: assistant record has no content. Keys: ${Object.keys(record).join(', ')}`,
       );
     } else if (record.type === 'progress') {
       processProgressRecord(agentId, record, agents, waitingTimers, permissionTimers);
@@ -305,7 +305,7 @@ export function processTranscriptLine(
                 agent.isTeamLead = true;
                 if (debug) {
                   console.log(
-                    `[aAgent] Agent ${agentId} spawned teammate "${teammateSpawn.teammateName}" -> lead of team ${teammateSpawn.teamName}`,
+                    `[PokeAgents] Agent ${agentId} spawned teammate "${teammateSpawn.teammateName}" -> lead of team ${teammateSpawn.teamName}`,
                   );
                 }
                 linkTeammates(agentId, agent, agents);
@@ -326,7 +326,7 @@ export function processTranscriptLine(
                 isAsyncAgentResult(block)
               ) {
                 console.log(
-                  `[aAgent] Agent ${agentId} background agent launched: ${completedToolId}`,
+                  `[PokeAgents] Agent ${agentId} background agent launched: ${completedToolId}`,
                 );
                 agent.backgroundAgentToolIds.add(completedToolId);
                 // Current harnesses OMIT run_in_background from the tool_use
@@ -353,7 +353,7 @@ export function processTranscriptLine(
                 continue; // don't mark as done yet
               }
 
-              console.log(`[aAgent] JSONL: Agent ${agentId} - tool done: ${block.tool_use_id}`);
+              console.log(`[PokeAgents] JSONL: Agent ${agentId} - tool done: ${block.tool_use_id}`);
               // If the completed tool spawned a subagent, clear its subagent tools
               if (isSubagentTool(completedToolName)) {
                 agent.activeSubagentToolIds.delete(completedToolId);
@@ -411,7 +411,7 @@ export function processTranscriptLine(
         if (toolIdMatch) {
           const completedToolId = toolIdMatch[1];
           if (agent.backgroundAgentToolIds.has(completedToolId)) {
-            console.log(`[aAgent] Agent ${agentId} background agent done: ${completedToolId}`);
+            console.log(`[PokeAgents] Agent ${agentId} background agent done: ${completedToolId}`);
             agent.backgroundAgentToolIds.delete(completedToolId);
             agent.activeSubagentToolIds.delete(completedToolId);
             agent.activeSubagentToolNames.delete(completedToolId);
@@ -518,7 +518,7 @@ export function processTranscriptLine(
         agent.seenUnknownRecordTypes.add(record.type);
         if (debug) {
           console.log(
-            `[aAgent] JSONL: Agent ${agentId} - unrecognized record type '${record.type}'. ` +
+            `[PokeAgents] JSONL: Agent ${agentId} - unrecognized record type '${record.type}'. ` +
               `Keys: ${Object.keys(record).join(', ')}`,
           );
         }
@@ -575,7 +575,7 @@ function processProgressRecord(
         const toolName = block.name || '';
         const status = formatToolStatus(toolName, block.input || {});
         console.log(
-          `[aAgent] Agent ${agentId} subagent tool start: ${block.id} ${status} (parent: ${parentToolId})`,
+          `[PokeAgents] Agent ${agentId} subagent tool start: ${block.id} ${status} (parent: ${parentToolId})`,
         );
 
         // Track sub-tool IDs
@@ -614,7 +614,7 @@ function processProgressRecord(
     for (const block of content) {
       if (block.type === 'tool_result' && block.tool_use_id) {
         console.log(
-          `[aAgent] Agent ${agentId} subagent tool done: ${block.tool_use_id} (parent: ${parentToolId})`,
+          `[PokeAgents] Agent ${agentId} subagent tool done: ${block.tool_use_id} (parent: ${parentToolId})`,
         );
 
         // Remove from tracking

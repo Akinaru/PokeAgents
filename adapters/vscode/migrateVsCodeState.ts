@@ -1,11 +1,11 @@
 /**
- * One-time migration of VS Code-native state into ~/.aagent/.
+ * One-time migration of VS Code-native state into ~/.pokeagents/.
  *
  * Sources:
  *   - context.globalState (settings) → config.json[vscode]
- *   - context.workspaceState['aagent.agents'] → vscode-state.json.agents
- *   - context.workspaceState['aagent.agentSeats'] → vscode-state.json.seats
- *   - context.workspaceState['aagent.layout'] → ~/.aagent/layout.json
+ *   - context.workspaceState['pokeagents.agents'] → vscode-state.json.agents
+ *   - context.workspaceState['pokeagents.agentSeats'] → vscode-state.json.seats
+ *   - context.workspaceState['pokeagents.layout'] → ~/.pokeagents/layout.json
  *
  * Runs on every extension activate(). Idempotent: if nothing legacy remains,
  * it's a no-op. Verifies file writes before clearing VS Code keys, so a disk
@@ -20,21 +20,21 @@ import type { PersistedAgent } from '../../core/src/schemas.js';
 import { readLayoutFromFile, writeLayoutToFile } from '../../server/src/layoutPersistence.js';
 
 /** VS Code globalState keys → setting key passed to adapter.getSetting/setSetting.
- *  `aagent.hooksEnabled` is NOT here: a legacy hooks-off is deliberately
+ *  `pokeagents.hooksEnabled` is NOT here: a legacy hooks-off is deliberately
  *  discarded rather than migrated (see the branch below). */
 const SETTINGS_MIGRATIONS: readonly { vscodeKey: string; settingKey: string }[] = [
-  { vscodeKey: 'aagent.soundEnabled', settingKey: 'aagent.soundEnabled' },
-  { vscodeKey: 'aagent.lastSeenVersion', settingKey: 'aagent.lastSeenVersion' },
-  { vscodeKey: 'aagent.alwaysShowLabels', settingKey: 'aagent.alwaysShowLabels' },
-  { vscodeKey: 'aagent.watchAllSessions', settingKey: 'aagent.watchAllSessions' },
-  { vscodeKey: 'aagent.hooksInfoShown', settingKey: 'aagent.hooksInfoShown' },
+  { vscodeKey: 'pokeagents.soundEnabled', settingKey: 'pokeagents.soundEnabled' },
+  { vscodeKey: 'pokeagents.lastSeenVersion', settingKey: 'pokeagents.lastSeenVersion' },
+  { vscodeKey: 'pokeagents.alwaysShowLabels', settingKey: 'pokeagents.alwaysShowLabels' },
+  { vscodeKey: 'pokeagents.watchAllSessions', settingKey: 'pokeagents.watchAllSessions' },
+  { vscodeKey: 'pokeagents.hooksInfoShown', settingKey: 'pokeagents.hooksInfoShown' },
 ];
 
-const VSCODE_KEY_HOOKS_ENABLED = 'aagent.hooksEnabled';
+const VSCODE_KEY_HOOKS_ENABLED = 'pokeagents.hooksEnabled';
 
-const WORKSPACE_KEY_AGENTS = 'aagent.agents';
-const WORKSPACE_KEY_AGENT_SEATS = 'aagent.agentSeats';
-const WORKSPACE_KEY_LAYOUT = 'aagent.layout';
+const WORKSPACE_KEY_AGENTS = 'pokeagents.agents';
+const WORKSPACE_KEY_AGENT_SEATS = 'pokeagents.agentSeats';
+const WORKSPACE_KEY_LAYOUT = 'pokeagents.layout';
 
 export function migrateVsCodeState(context: vscode.ExtensionContext, adapter: StateAdapter): void {
   const pending: string[] = [];
@@ -98,7 +98,7 @@ export function migrateVsCodeState(context: vscode.ExtensionContext, adapter: St
     }
   }
 
-  // ── Layout (workspaceState → ~/.aagent/layout.json) ──
+  // ── Layout (workspaceState → ~/.pokeagents/layout.json) ──
   // Old VS Code versions stored layout in workspaceState. New code reads from a
   // user-level file. Migrate, but never clobber an existing file (it's the
   // source of truth once written). If the file already exists, just clear the
@@ -123,12 +123,12 @@ export function migrateVsCodeState(context: vscode.ExtensionContext, adapter: St
 
   if (pending.length > 0) {
     console.warn(
-      `[aAgent] Migration incomplete -- ${pending.length} legacy VS Code ` +
+      `[PokeAgents] Migration incomplete -- ${pending.length} legacy VS Code ` +
         `key(s) still present. Will retry next activate. Keys: ${pending.join(', ')}`,
     );
     void vscode.window.showWarningMessage(
-      `aAgent: ${pending.length} legacy setting(s) could not be migrated to ` +
-        `~/.aagent/config.json. Check ~/.aagent/ is writable.`,
+      `PokeAgents: ${pending.length} legacy setting(s) could not be migrated to ` +
+        `~/.pokeagents/config.json. Check ~/.pokeagents/ is writable.`,
     );
   }
 }

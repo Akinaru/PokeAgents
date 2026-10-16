@@ -47,12 +47,13 @@ export const GLOBAL_SCAN_ACTIVE_MIN_SIZE = 3_072; // 3KB
 /** Only adopt global JSONL files modified within this window */
 export const GLOBAL_SCAN_ACTIVE_MAX_AGE_MS = 600_000; // 10 minutes
 
-// ── Display Truncation + aAgent Server paths ──────────
+// ── Display Truncation + PokeAgents Server paths ──────────
 // Centralized in core/src/constants.ts; re-exported here for back-compat.
 export {
   BASH_COMMAND_DISPLAY_MAX_LENGTH,
   HOOK_API_PREFIX,
   HOOK_SCRIPTS_DIR,
+  LEGACY_DATA_DIR,
   SERVER_JSON_DIR,
   SERVER_JSON_NAME,
   TASK_DESCRIPTION_DISPLAY_MAX_LENGTH,
@@ -91,7 +92,7 @@ export const SESSION_END_GRACE_MS = 2000;
 export const MAX_HOOK_BODY_SIZE = 65_536; // 64KB
 
 // ── Layout/Config Persistence ──────────────────────────────
-export const LAYOUT_FILE_DIR = '.aagent';
+export const LAYOUT_FILE_DIR = '.pokeagents';
 export const LAYOUT_FILE_NAME = 'layout.json';
 export const LAYOUT_FILE_POLL_INTERVAL_MS = 2000;
 export const LAYOUT_REVISION_KEY = 'layoutRevision';
@@ -100,7 +101,7 @@ export const CONFIG_FILE_NAME = 'config.json';
 // ── Pokémon Sprites ─────────────────────────────────────────
 export const POKEMON_SPRITE_BASE_URL =
   'https://raw.githubusercontent.com/PMDCollab/SpriteCollab/master/sprite';
-/** Subdirectory of ~/.aagent holding downloaded sprite sheets. */
+/** Subdirectory of ~/.pokeagents holding downloaded sprite sheets. */
 export const POKEMON_CACHE_DIR_NAME = 'pokemon';
 /** Species (normal and shiny counted separately) kept on disk; ~30 KB each. */
 export const POKEMON_CACHE_MAX_ENTRIES = 128;

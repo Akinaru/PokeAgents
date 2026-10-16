@@ -102,7 +102,7 @@ export async function onPokemonSpritesLoaded(msg: PokemonSpritesLoaded): Promise
       >,
     });
   } catch (err) {
-    console.warn(`[aAgent] Pokémon #${msg.dex} sprites unusable:`, err);
+    console.warn(`[PokeAgents] Pokémon #${msg.dex} sprites unusable:`, err);
     entries.set(key, { status: 'failed' });
   }
 }

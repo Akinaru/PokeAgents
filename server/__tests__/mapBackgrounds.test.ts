@@ -8,7 +8,7 @@ import { loadAllMapBackgrounds, loadMapBackgrounds } from '../src/mapBackgrounds
 describe('map backgrounds from external asset directories', () => {
   const dirs: string[] = [];
   const makeDir = (files: Record<string, string>): string => {
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'aagent-maps-'));
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'pokeagents-maps-'));
     dirs.push(root);
     fs.mkdirSync(path.join(root, 'assets', 'maps'), { recursive: true });
     for (const [name, content] of Object.entries(files)) {
@@ -36,7 +36,7 @@ describe('map backgrounds from external asset directories', () => {
   });
 
   it('returns nothing for a directory without maps', () => {
-    expect(loadMapBackgrounds(path.join(os.tmpdir(), 'aagent-does-not-exist'))).toEqual({});
+    expect(loadMapBackgrounds(path.join(os.tmpdir(), 'pokeagents-does-not-exist'))).toEqual({});
   });
 
   it('lets a later directory override an earlier one', () => {

@@ -9,9 +9,11 @@
 // ── Hook API ─────────────────────────────────────────────────
 
 export const HOOK_API_PREFIX = '/api/hooks';
-export const SERVER_JSON_DIR = '.aagent';
+export const SERVER_JSON_DIR = '.pokeagents';
 export const SERVER_JSON_NAME = 'server.json';
-export const HOOK_SCRIPTS_DIR = '.aagent/hooks';
+export const HOOK_SCRIPTS_DIR = '.pokeagents/hooks';
+/** Data folder used before the rename to PokeAgents (see server/src/legacyDataDir.ts). */
+export const LEGACY_DATA_DIR = '.aagent';
 
 // ── Display ──────────────────────────────────────────────────
 

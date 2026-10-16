@@ -3,7 +3,7 @@ import * as os from 'os';
 import * as path from 'path';
 import { isDeepStrictEqual } from 'util';
 
-import { HOOK_SCRIPTS_DIR } from '../../../constants.js';
+import { HOOK_SCRIPTS_DIR, LEGACY_DATA_DIR } from '../../../constants.js';
 import {
   CLAUDE_HOOK_EVENTS,
   CLAUDE_HOOK_SCRIPT_NAME,
@@ -36,7 +36,7 @@ function getClaudeSettingsPath(): string {
   return path.join(os.homedir(), '.claude', 'settings.json');
 }
 
-/** Returns the destination path for the hook script (~/.aagent/hooks/claude-hook.js). */
+/** Returns the destination path for the hook script (~/.pokeagents/hooks/claude-hook.js). */
 function getHookScriptPath(): string {
   return path.join(os.homedir(), HOOK_SCRIPTS_DIR, CLAUDE_HOOK_SCRIPT_NAME);
 }
@@ -156,7 +156,7 @@ async function mutateClaudeSettings(
   throw lastError ?? new Error(SETTINGS_UNPARSEABLE_MESSAGE);
 }
 
-/** One-time safety net: before aAgent' first-ever modification of
+/** One-time safety net: before PokeAgents' first-ever modification of
  *  settings.json, copy it aside. Never overwritten after that, so even a future
  *  installer bug leaves the user a recoverable copy of their pre-Pixel-Agents
  *  file.
@@ -182,7 +182,7 @@ function backupClaudeSettingsOnce(settingsPath: string): void {
   const backupPath = settingsPath + SETTINGS_BACKUP_SUFFIX;
   try {
     fs.copyFileSync(settingsPath, backupPath, fs.constants.COPYFILE_EXCL);
-    console.log(`[aAgent] Backed up Claude settings to ${backupPath}`);
+    console.log(`[PokeAgents] Backed up Claude settings to ${backupPath}`);
   } catch (e) {
     if ((e as NodeJS.ErrnoException).code !== 'EEXIST') throw e;
     if (!isRegularFile(backupPath)) {
@@ -292,10 +292,15 @@ function removeIfPresent(filePath: string): void {
 /** Legacy script name (before rename to claude-hook.js), as a path suffix. */
 const LEGACY_HOOK_PATH_SUFFIX = `/${LEGACY_HOOK_SCRIPT_NAME}`;
 
-/** The path suffix we own: `/.aagent/hooks/claude-hook.js`. The leading
- *  separator is load-bearing — without it `/opt/evil.aagent/hooks/...`
+/** The path suffix we own: `/.pokeagents/hooks/claude-hook.js`. The leading
+ *  separator is load-bearing — without it `/opt/evil.pokeagents/hooks/...`
  *  and `my-pixel-agents-hook.js` match by substring. */
 const HOOK_PATH_SUFFIX = `/${HOOK_SCRIPTS_DIR}/${CLAUDE_HOOK_SCRIPT_NAME}`;
+
+/** Our script under the data folder used before the rename to PokeAgents.
+ *  Recognized so the next install replaces those entries with the current path
+ *  (and uninstall removes them) instead of leaving a second, orphaned hook. */
+const PRE_RENAME_HOOK_PATH_SUFFIX = `/${LEGACY_DATA_DIR}/hooks/${CLAUDE_HOOK_SCRIPT_NAME}`;
 
 /** Characters that end a path token in a shell command line. A path we own is
  *  either the whole token or ends at one of these; anything else after it
@@ -310,10 +315,10 @@ const PATH_TERMINATORS = new Set([' ', '\t', '"', "'", ';', '&', '|', '>', '<', 
  * generic name another Claude tool could plausibly use, and substring tests
  * claim unrelated commands. Empirically, plain `includes` classified all of
  * these as ours — and `uninstallHooks` then DELETED them:
- *   node /opt/.aagent/hooks/claude-hook.js.backup   (a different file)
- *   true # /opt/.aagent/hooks/claude-hook.js        (a comment)
- *   wrapper --note=".aagent/hooks/claude-hook.js" x (an argument)
- *   node /opt/evil.aagent/hooks/claude-hook.js      (no token boundary)
+ *   node /opt/.pokeagents/hooks/claude-hook.js.backup   (a different file)
+ *   true # /opt/.pokeagents/hooks/claude-hook.js        (a comment)
+ *   wrapper --note=".pokeagents/hooks/claude-hook.js" x (an argument)
+ *   node /opt/evil.pokeagents/hooks/claude-hook.js      (no token boundary)
  *   node /opt/my-pixel-agents-hook.js.bak                 (legacy, no boundary)
  * Deleting a third-party hook is the same "we destroyed the user's config"
  * class of bug this whole module exists to fix, so identity is anchored at
@@ -341,7 +346,7 @@ const PATH_TERMINATORS = new Set([' ', '\t', '"', "'", ';', '&', '|', '>', '<', 
  * - The FIRST token only. A command is `node <script>` or `<script>`; our path
  *   appearing later is an argument or a comment, not the thing being run.
  * - ABSOLUTE paths only. We always write one, and a RELATIVE
- *   `.aagent/hooks/claude-hook.js` resolves against whatever directory
+ *   `.pokeagents/hooks/claude-hook.js` resolves against whatever directory
  *   Claude Code happens to run in — so it names a project-local file that is
  *   almost certainly not ours, and deleting it would be the same mistake as
  *   deleting a lookalike.
@@ -359,7 +364,11 @@ function isOurHookCommand(command: string): boolean {
   // Both suffix constants are lower-case, so folding the token is the whole
   // normalization.
   const normalized = token.toLowerCase();
-  return normalized.endsWith(HOOK_PATH_SUFFIX) || normalized.endsWith(LEGACY_HOOK_PATH_SUFFIX);
+  return (
+    normalized.endsWith(HOOK_PATH_SUFFIX) ||
+    normalized.endsWith(PRE_RENAME_HOOK_PATH_SUFFIX) ||
+    normalized.endsWith(LEGACY_HOOK_PATH_SUFFIX)
+  );
 }
 
 /**
@@ -491,7 +500,7 @@ function settingsHoldOnlyOurHooks(settings: ClaudeSettings): boolean {
  *  A unique symbol, never `null`: `null` is a value a user's settings.json can
  *  legitimately contain inside a hooks array, and using it as the sentinel made
  *  us DELETE it. Observed: `{"hooks":{"Stop":[null,"third-party-junk"]}}` — a
- *  file with no aAgent command anywhere — came back rewritten as
+ *  file with no PokeAgents command anywhere — came back rewritten as
  *  `{"hooks":{"Stop":["third-party-junk"]}}` and logged "Hooks removed". A
  *  sentinel that can collide with user data is a sentinel that eats user data;
  *  a symbol cannot appear in parsed JSON. */
@@ -547,7 +556,7 @@ function makeHookEntry(): ClaudeHookEntry {
 }
 
 /**
- * Whether ANY aAgent hook command is present in ~/.claude/settings.json.
+ * Whether ANY PokeAgents hook command is present in ~/.claude/settings.json.
  *
  * "Any", not "all 12", and the difference is the whole point. Every caller asks
  * this question for one of two reasons — "are our hooks firing right now?"
@@ -586,9 +595,9 @@ export function areHooksInstalled(): boolean {
 }
 
 /**
- * Install aAgent hook entries into ~/.claude/settings.json for
+ * Install PokeAgents hook entries into ~/.claude/settings.json for
  * Notification, Stop, and PermissionRequest events. Idempotent: removes
- * any existing aAgent entries before adding fresh ones.
+ * any existing PokeAgents entries before adding fresh ones.
  *
  * Rejects (before any write) when settings.json exists but cannot be parsed or
  * keeps changing concurrently — callers surface the error to the user instead
@@ -604,7 +613,7 @@ export async function installHooks(): Promise<void> {
     });
   }
   if (wrote) {
-    console.log('[aAgent] Hooks installed in ~/.claude/settings.json');
+    console.log('[PokeAgents] Hooks installed in ~/.claude/settings.json');
   }
 }
 
@@ -665,7 +674,7 @@ function installEntries(): Promise<boolean> {
         throw new Error(settingsNonArrayEventMessage(event));
       }
       const entries = hooks[event];
-      // Remove any existing aAgent commands (in case the script path changed)
+      // Remove any existing PokeAgents commands (in case the script path changed)
       const filtered = (withoutOurEntries(entries) ?? entries).concat(makeHookEntry());
       if (JSON.stringify(filtered) !== JSON.stringify(entries)) {
         hooks[event] = filtered;
@@ -676,7 +685,7 @@ function installEntries(): Promise<boolean> {
   });
 }
 
-/** Remove all aAgent hook entries from ~/.claude/settings.json. Cleans up empty objects.
+/** Remove all PokeAgents hook entries from ~/.claude/settings.json. Cleans up empty objects.
  *  Rejects (before any write) when the file cannot be parsed — same protection
  *  as install: never rewrite a file we could not read. Callers surface the
  *  error; claiming success after an aborted uninstall is how a "removed"
@@ -717,11 +726,11 @@ export async function uninstallHooks(): Promise<void> {
     });
   }
   if (wrote) {
-    console.log('[aAgent] Hooks removed from ~/.claude/settings.json');
+    console.log('[PokeAgents] Hooks removed from ~/.claude/settings.json');
   }
 }
 
-/** Copy the shipped hook script from the extension to ~/.aagent/hooks/.
+/** Copy the shipped hook script from the extension to ~/.pokeagents/hooks/.
  *  Returns true if the script was copied, false if the source was missing or the
  *  copy failed, so callers can report the failure instead of logging a false
  *  success (issue #333: a path regression silently installed nothing). */
@@ -735,15 +744,15 @@ export function copyHookScript(extensionPath: string): boolean {
       fs.mkdirSync(dstDir, { recursive: true, mode: 0o700 });
     }
     if (!fs.existsSync(src)) {
-      console.warn(`[aAgent] Hook script not found at ${src}`);
+      console.warn(`[PokeAgents] Hook script not found at ${src}`);
       return false;
     }
     fs.copyFileSync(src, dst);
     fs.chmodSync(dst, 0o700);
-    console.log(`[aAgent] Hook script installed at ${dst}`);
+    console.log(`[PokeAgents] Hook script installed at ${dst}`);
     return true;
   } catch (e) {
-    console.error(`[aAgent] Failed to copy hook script: ${e}`);
+    console.error(`[PokeAgents] Failed to copy hook script: ${e}`);
     return false;
   }
 }

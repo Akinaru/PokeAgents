@@ -1,6 +1,6 @@
 /**
  * The Pokédex: every species that has appeared as an agent, shared by all
- * windows and surfaces in ~/.aagent/pokedex.json.
+ * windows and surfaces in ~/.pokeagents/pokedex.json.
  *
  * Encounters are counted by session seed, so a reload re-showing the same
  * agent never inflates them. Files written before entries existed
@@ -93,7 +93,7 @@ function writeStore(store: Store): void {
     fs.writeFileSync(tmp, JSON.stringify({ species: store }));
     fs.renameSync(tmp, file);
   } catch (err) {
-    console.error('[aAgent] Failed to write Pokédex:', err);
+    console.error('[PokeAgents] Failed to write Pokédex:', err);
   }
 }
 

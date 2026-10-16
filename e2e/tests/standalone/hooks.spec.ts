@@ -116,7 +116,7 @@ test.describe('Standalone / hooks consent', () => {
 
   function readConsentFrom(tmpHome: string): boolean {
     try {
-      const raw = fs.readFileSync(path.join(tmpHome, '.aagent', 'config.json'), 'utf8');
+      const raw = fs.readFileSync(path.join(tmpHome, '.pokeagents', 'config.json'), 'utf8');
       const consent = (JSON.parse(raw) as { hooksConsent?: Record<string, string> }).hooksConsent;
       return consent?.claude === 'granted';
     } catch {

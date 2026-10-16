@@ -1,6 +1,6 @@
 # Third-party notices
 
-aAgent is an unofficial, free and non-commercial fan project. It is not affiliated with, endorsed or sponsored by Nintendo, Creatures Inc., GAME FREAK inc., The Pokémon Company or Anthropic.
+PokeAgents is an unofficial, free and non-commercial fan project. It is not affiliated with, endorsed or sponsored by Nintendo, Creatures Inc., GAME FREAK inc., The Pokémon Company or Anthropic.
 
 ## Trademarks
 
@@ -14,7 +14,7 @@ Names are used only to describe what the software shows. No game files, ripped s
 
 ### Pixel Agents
 
-aAgent is a fork of [Pixel Agents](https://github.com/pixel-agents-hq/pixel-agents).
+PokeAgents is a fork of [Pixel Agents](https://github.com/pixel-agents-hq/pixel-agents).
 
 ```
 MIT License
@@ -31,11 +31,11 @@ Copyright 2021 The Pixelify Sans Project Authors (https://github.com/eifetx/Pixe
 
 ## Assets downloaded at runtime
 
-These files are **not** stored in the repository or the extension. The extension downloads them on first use and caches them on the user's machine, in `~/.aagent/pokemon`.
+These files are **not** stored in the repository or the extension. The extension downloads them on first use and caches them on the user's machine, in `~/.pokeagents/pokemon`.
 
 ### PMDCollab SpriteCollab
 
-Overworld sprite sheets come from [PMDCollab SpriteCollab](https://github.com/PMDCollab/SpriteCollab), made by its contributors (each sheet's artists are listed in that project's credits). They are licensed under [Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)](https://creativecommons.org/licenses/by-nc/4.0/). Because of this license, aAgent must not be used for commercial purposes.
+Overworld sprite sheets come from [PMDCollab SpriteCollab](https://github.com/PMDCollab/SpriteCollab), made by its contributors (each sheet's artists are listed in that project's credits). They are licensed under [Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)](https://creativecommons.org/licenses/by-nc/4.0/). Because of this license, PokeAgents must not be used for commercial purposes.
 
 ### PokeAPI sprites
 
@@ -47,4 +47,4 @@ Species data (names, types, categories, evolutions, capture rates) bundled in `w
 
 ## Removal requests
 
-If you hold rights to any element used here and want it removed, please [open an issue](https://github.com/Akinaru/aAgent/issues).
+If you hold rights to any element used here and want it removed, please [open an issue](https://github.com/Akinaru/PokeAgents/issues).

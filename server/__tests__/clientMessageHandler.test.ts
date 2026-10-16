@@ -139,10 +139,10 @@ describe('clientMessageHandler: areas + carpet wire ordering', () => {
       handleClientMessage({ type: 'setShowAreas', enabled: true }, (m) => sent.push(m), ctx);
 
       const adapter = store.getAdapter()!;
-      expect(adapter.getSetting('aagent.showAreas', false)).toBe(true);
+      expect(adapter.getSetting('pokeagents.showAreas', false)).toBe(true);
 
       handleClientMessage({ type: 'setShowAreas', enabled: false }, (m) => sent.push(m), ctx);
-      expect(adapter.getSetting('aagent.showAreas', true)).toBe(false);
+      expect(adapter.getSetting('pokeagents.showAreas', true)).toBe(false);
     });
   });
 
@@ -184,7 +184,7 @@ describe('clientMessageHandler: areas + carpet wire ordering', () => {
   describe('setHooksEnabled persistence', () => {
     /** Put our command on every installed event, as a real install would. */
     function seedInstalledHooks(): void {
-      const command = `node "${path.join(tempHome, '.aagent', 'hooks', 'claude-hook.js')}"`;
+      const command = `node "${path.join(tempHome, '.pokeagents', 'hooks', 'claude-hook.js')}"`;
       const entry = { matcher: '', hooks: [{ type: 'command', command, timeout: 5 }] };
       fs.mkdirSync(path.join(tempHome, '.claude'), { recursive: true });
       fs.writeFileSync(

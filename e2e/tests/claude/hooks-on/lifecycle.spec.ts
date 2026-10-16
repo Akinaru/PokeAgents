@@ -1374,7 +1374,7 @@ test.describe('Hooks ON / lifecycle', () => {
   // setSettings UI toggle → file on disk.
   //
   // Pixel-agents hook entries are recognised by the command string containing
-  // BOTH 'claude-hook.js' and the '.aagent' directory (or legacy
+  // BOTH 'claude-hook.js' and the '.pokeagents' directory (or legacy
   // 'pixel-agents-hook.js'); see
   // server/src/providers/hook/claude/claudeHookInstaller.ts::isOurHookCommand.
   // These test helpers match on the script names alone, which is fine here:
@@ -1567,7 +1567,7 @@ test.describe('Hooks ON / lifecycle', () => {
   //
   // The webview's settings UI is hydrated from `settingsLoaded` on every
   // `webviewReady`. The extension reads from its persisted state (workspace
-  // and global state plus ~/.aagent/config.json) and resends. A
+  // and global state plus ~/.pokeagents/config.json) and resends. A
   // regression in any of {FileStateAdapter.setSetting, configPersistence,
   // PixelAgentsViewProvider's webviewReady handler} would surface as "I
   // turned X off, restarted, X is back on."
@@ -1611,7 +1611,7 @@ test.describe('Hooks ON / lifecycle', () => {
 
   // layout editor smoke. Verifies entering edit mode reveals the editor
   // toolbar, that a save round-trips through layoutPersistence.ts to
-  // ~/.aagent/layout.json, and that exiting edit mode hides the toolbar.
+  // ~/.pokeagents/layout.json, and that exiting edit mode hides the toolbar.
   //
   // Strategy: click Layout button to enter edit mode -> assert a known
   // editor-only button is visible -> click on the canvas to dirty the layout
@@ -1628,7 +1628,7 @@ test.describe('Hooks ON / lifecycle', () => {
   }) => {
     const { frame, tmpHome, narrator } = pixelAgents;
 
-    const layoutPath = path.join(tmpHome, '.aagent', 'layout.json');
+    const layoutPath = path.join(tmpHome, '.pokeagents', 'layout.json');
 
     // Initial layout — there should be one written at fixture startup since
     // the webview boots with a default layout. Record its content for the
@@ -1692,7 +1692,7 @@ test.describe('Hooks ON / lifecycle', () => {
         { timeout: 10_000 },
       )
       .toBe(true);
-    narrator.check('~/.aagent/layout.json changed on disk after Save');
+    narrator.check('~/.pokeagents/layout.json changed on disk after Save');
 
     // Exit edit mode and confirm the editor button disappears.
     narrator.step('exiting Layout mode');

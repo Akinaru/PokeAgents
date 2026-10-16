@@ -205,7 +205,7 @@ describe('dist/cli.js entry-point guard', () => {
    *  would be testing the helper. The trailing `\s` makes it wait for a
    *  complete line: stdout arrives in chunks, and a half-delivered URL still
    *  parses as a URL (`http://127.0.0.1:501`). */
-  const URL_LINE = /aAgent server running at (\S+)\s/;
+  const URL_LINE = /PokeAgents server running at (\S+)\s/;
 
   function printedUrl(output: string): URL {
     const match = URL_LINE.exec(output);
@@ -216,7 +216,7 @@ describe('dist/cli.js entry-point guard', () => {
   /** The token the server actually minted, read from its own discovery file —
    *  an independent witness, so a printed token that drifts from it fails. */
   function mintedToken(tmpHome: string): string {
-    const raw = fs.readFileSync(path.join(tmpHome, '.aagent', 'server.json'), 'utf-8');
+    const raw = fs.readFileSync(path.join(tmpHome, '.pokeagents', 'server.json'), 'utf-8');
     return (JSON.parse(raw) as { token: string }).token;
   }
 
@@ -294,7 +294,7 @@ describe('dist/cli.js entry-point guard', () => {
     fs.mkdirSync(path.join(tmpHome, '.claude'), { recursive: true });
     // A legacy install: our command on every event we install today, plus the
     // two we no longer do.
-    const ourCommand = `node "${path.join(tmpHome, '.aagent', 'hooks', 'claude-hook.js')}"`;
+    const ourCommand = `node "${path.join(tmpHome, '.pokeagents', 'hooks', 'claude-hook.js')}"`;
     const thirdPartyCommand = 'node /elsewhere/other-tool.js';
     const legacyEvents = [...CLAUDE_HOOK_EVENTS, 'UserPromptSubmit', 'TaskCreated'];
     const hooks = Object.fromEntries(
@@ -312,7 +312,7 @@ describe('dist/cli.js entry-point guard', () => {
     );
 
     await runCliServer(tmpHome, async ({ output }) => {
-      await waitForCondition(() => output().includes('[aAgent] Hooks installed'));
+      await waitForCondition(() => output().includes('[PokeAgents] Hooks installed'));
       const after = JSON.parse(fs.readFileSync(settingsPath, 'utf-8')) as {
         permissions?: unknown;
         hooks: Record<string, Array<{ hooks: Array<{ command: string }> }>>;
@@ -331,7 +331,7 @@ describe('dist/cli.js entry-point guard', () => {
       // TaskCreated held only ours -> emptied and the key removed entirely.
       expect(after.hooks['TaskCreated']).toBeUndefined();
 
-      const configPath = path.join(tmpHome, '.aagent', 'config.json');
+      const configPath = path.join(tmpHome, '.pokeagents', 'config.json');
       const consent = (
         JSON.parse(fs.readFileSync(configPath, 'utf-8')) as {
           hooksConsent?: Record<string, string>;
@@ -356,19 +356,19 @@ describe('dist/cli.js entry-point guard', () => {
   // (ENOTDIR) without touching the repo's real dist/.
   itBuilt('writes no hook entries when the hook script cannot be copied', async () => {
     const tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), 'pxl-cli-nocopy-'));
-    fs.mkdirSync(path.join(tmpHome, '.aagent'), { recursive: true });
+    fs.mkdirSync(path.join(tmpHome, '.pokeagents'), { recursive: true });
     fs.writeFileSync(
-      path.join(tmpHome, '.aagent', 'config.json'),
+      path.join(tmpHome, '.pokeagents', 'config.json'),
       JSON.stringify({ hooksConsent: { claude: 'granted' } }),
     );
     // hooks/ is a FILE, so copying into hooks/claude-hook.js fails.
-    fs.writeFileSync(path.join(tmpHome, '.aagent', 'hooks'), 'not a directory');
+    fs.writeFileSync(path.join(tmpHome, '.pokeagents', 'hooks'), 'not a directory');
 
     await runCliServer(tmpHome, async ({ output }) => {
       await new Promise((resolve) => setTimeout(resolve, 500));
       expect(fs.existsSync(path.join(tmpHome, '.claude', 'settings.json'))).toBe(false);
       expect(output()).toContain('Hooks NOT installed');
-      expect(output()).not.toContain('[aAgent] Hooks installed');
+      expect(output()).not.toContain('[PokeAgents] Hooks installed');
     });
   });
 
@@ -378,9 +378,9 @@ describe('dist/cli.js entry-point guard', () => {
     // The spawned CLI has no TTY, and without prior consent the first-run gate
     // (rightly) skips hook installation there — seed consent so this test can
     // exercise the actual install path.
-    fs.mkdirSync(path.join(tmpHome, '.aagent'), { recursive: true });
+    fs.mkdirSync(path.join(tmpHome, '.pokeagents'), { recursive: true });
     fs.writeFileSync(
-      path.join(tmpHome, '.aagent', 'config.json'),
+      path.join(tmpHome, '.pokeagents', 'config.json'),
       JSON.stringify({ hooksConsent: { claude: 'granted' } }),
     );
     const port = await getFreePort();
@@ -409,7 +409,7 @@ describe('dist/cli.js entry-point guard', () => {
         }
       });
 
-      const installedHook = path.join(tmpHome, '.aagent', 'hooks', 'claude-hook.js');
+      const installedHook = path.join(tmpHome, '.pokeagents', 'hooks', 'claude-hook.js');
       await waitForCondition(() => fs.existsSync(installedHook));
       expect(fs.readFileSync(installedHook, 'utf-8')).toContain('#!/usr/bin/env node');
       if (process.platform !== 'win32') {

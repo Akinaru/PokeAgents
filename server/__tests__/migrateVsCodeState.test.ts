@@ -74,27 +74,27 @@ describe('migrateVsCodeState', () => {
 
   it('migrates every legacy globalState setting — and DISCARDS the hooks preference', () => {
     const { context, globalStore } = makeContext({
-      'aagent.soundEnabled': false,
-      'aagent.lastSeenVersion': '1.2.0',
-      'aagent.alwaysShowLabels': true,
-      'aagent.watchAllSessions': true,
-      'aagent.hooksEnabled': false,
-      'aagent.hooksInfoShown': true,
+      'pokeagents.soundEnabled': false,
+      'pokeagents.lastSeenVersion': '1.2.0',
+      'pokeagents.alwaysShowLabels': true,
+      'pokeagents.watchAllSessions': true,
+      'pokeagents.hooksEnabled': false,
+      'pokeagents.hooksInfoShown': true,
     });
     const adapter = new FileStateAdapter({ namespace: 'vscode' });
 
     migrateVsCodeState(context, adapter);
 
-    expect(adapter.getSetting('aagent.soundEnabled', true)).toBe(false);
-    expect(adapter.getSetting('aagent.lastSeenVersion', '')).toBe('1.2.0');
-    expect(adapter.getSetting('aagent.alwaysShowLabels', false)).toBe(true);
-    expect(adapter.getSetting('aagent.watchAllSessions', false)).toBe(true);
+    expect(adapter.getSetting('pokeagents.soundEnabled', true)).toBe(false);
+    expect(adapter.getSetting('pokeagents.lastSeenVersion', '')).toBe('1.2.0');
+    expect(adapter.getSetting('pokeagents.alwaysShowLabels', false)).toBe(true);
+    expect(adapter.getSetting('pokeagents.watchAllSessions', false)).toBe(true);
     // The legacy hooksEnabled is DISCARDED, not migrated: hooks were on by
     // default back then, so a stored value means the user turned them OFF
     // without ever being told what they add — they get the Intro instead. The
     // provider map keeps its default...
     expect(getHooksEnabled('claude')).toBe(true);
-    expect(adapter.getSetting('aagent.hooksInfoShown', false)).toBe(true);
+    expect(adapter.getSetting('pokeagents.hooksInfoShown', false)).toBe(true);
     // ...while the stale key is still cleared — left behind it would count as
     // unmigrated forever and warn on every launch.
     expect(globalStore).toEqual({});
@@ -115,8 +115,8 @@ describe('migrateVsCodeState', () => {
     const { context, workspaceStore } = makeContext(
       {},
       {
-        'aagent.agents': legacyAgents,
-        'aagent.agentSeats': legacySeats,
+        'pokeagents.agents': legacyAgents,
+        'pokeagents.agentSeats': legacySeats,
       },
     );
     const adapter = new FileStateAdapter({ namespace: 'vscode' });
@@ -138,16 +138,16 @@ describe('migrateVsCodeState', () => {
   });
 
   it('idempotent: running twice with pre-cleared legacy state does nothing', () => {
-    const { context } = makeContext({ 'aagent.soundEnabled': false }, {});
+    const { context } = makeContext({ 'pokeagents.soundEnabled': false }, {});
     const adapter = new FileStateAdapter({ namespace: 'vscode' });
 
     migrateVsCodeState(context, adapter);
     migrateVsCodeState(context, adapter);
-    expect(adapter.getSetting('aagent.soundEnabled', true)).toBe(false);
+    expect(adapter.getSetting('pokeagents.soundEnabled', true)).toBe(false);
     expect(showWarningMessage).not.toHaveBeenCalled();
   });
 
-  it('migrates legacy layout from workspaceState to ~/.aagent/layout.json', () => {
+  it('migrates legacy layout from workspaceState to ~/.pokeagents/layout.json', () => {
     const legacyLayout = {
       version: 1,
       cols: 20,
@@ -155,7 +155,7 @@ describe('migrateVsCodeState', () => {
       tiles: [0, 1, 2],
       furniture: [{ type: 'desk', uid: 'd1', col: 0, row: 0 }],
     };
-    const { context, workspaceStore } = makeContext({}, { 'aagent.layout': legacyLayout });
+    const { context, workspaceStore } = makeContext({}, { 'pokeagents.layout': legacyLayout });
     const adapter = new FileStateAdapter({ namespace: 'vscode' });
 
     migrateVsCodeState(context, adapter);
@@ -169,7 +169,7 @@ describe('migrateVsCodeState', () => {
     const legacyLayout = { version: 1, cols: 20, rows: 11, tiles: [0], furniture: [] };
     const existingLayout = { version: 1, cols: 30, rows: 15, tiles: [9], furniture: [] };
     writeLayoutToFile(existingLayout);
-    const { context, workspaceStore } = makeContext({}, { 'aagent.layout': legacyLayout });
+    const { context, workspaceStore } = makeContext({}, { 'pokeagents.layout': legacyLayout });
     const adapter = new FileStateAdapter({ namespace: 'vscode' });
 
     migrateVsCodeState(context, adapter);
@@ -180,20 +180,20 @@ describe('migrateVsCodeState', () => {
   });
 
   it('warns + keeps legacy keys if file write fails (simulated via read-only HOME)', () => {
-    // Make ~/.aagent/ unwritable by pointing HOME at a non-writable path.
+    // Make ~/.pokeagents/ unwritable by pointing HOME at a non-writable path.
     // Simulate by replacing with a file (so mkdirSync fails on subpath).
     const blocker = path.join(tempHome, 'blocker');
     fs.writeFileSync(blocker, 'x');
     homeOverride = blocker; // home is now a file; can't mkdir inside
 
     const { context, globalStore } = makeContext({
-      'aagent.soundEnabled': false,
+      'pokeagents.soundEnabled': false,
     });
     const adapter = new FileStateAdapter({ namespace: 'vscode' });
     migrateVsCodeState(context, adapter);
 
     // Legacy key remains because the write silently failed -> verify !== legacy
-    expect(globalStore['aagent.soundEnabled']).toBe(false);
+    expect(globalStore['pokeagents.soundEnabled']).toBe(false);
     expect(showWarningMessage).toHaveBeenCalledOnce();
   });
 });

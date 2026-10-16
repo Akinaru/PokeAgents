@@ -4,7 +4,7 @@
  *
  * The textures are Nintendo / GAME FREAK property: they are read from a local
  * folder (default tmp/bw/matrix1, git-ignored) and the pack is written to
- * ~/.aagent/packs/pokemon-bw — never into this repository. The pack overrides
+ * ~/.pokeagents/packs/pokemon-bw — never into this repository. The pack overrides
  * the bundled Route 1 ground and its TREE / TALL_GRASS / FLOWERS / ROUTE_SIGN
  * furniture by name; delete the folder (or remove it in Settings) to go back.
  *
@@ -24,7 +24,7 @@ import { COLS, ROUTE_BACKGROUND, ROUTE_SHAPES, ROWS, routeDecor } from './lib/ro
 const TEXTURE_DIR = path.resolve(
   process.argv[2] ?? path.join(__dirname, '..', 'tmp', 'bw', 'matrix1'),
 );
-const PACK_DIR = path.join(os.homedir(), '.aagent', 'packs', 'pokemon-bw');
+const PACK_DIR = path.join(os.homedir(), '.pokeagents', 'packs', 'pokemon-bw');
 
 function texture(name: string): Canvas {
   const file = path.join(TEXTURE_DIR, `matrix1_${name}.png`);

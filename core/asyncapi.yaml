@@ -950,7 +950,7 @@ components:
             $ref: '#/components/schemas/SeatAssignment'
 
     SaveLayout:
-      description: Save the office layout to ~/.aagent/layout.json.
+      description: Save the office layout to ~/.pokeagents/layout.json.
       type: object
       additionalProperties: false
       required: [type, layout]

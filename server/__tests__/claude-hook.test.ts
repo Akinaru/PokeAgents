@@ -11,7 +11,7 @@ const HOOK_SCRIPT = path.join(__dirname, '../../dist/hooks/claude-hook.js');
 let tmpBase: string;
 
 function writeServerJson(port: number, token: string): void {
-  const dir = path.join(tmpBase, '.aagent');
+  const dir = path.join(tmpBase, '.pokeagents');
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(
     path.join(dir, 'server.json'),
@@ -19,9 +19,9 @@ function writeServerJson(port: number, token: string): void {
   );
 }
 
-/** Write one multi-server registry entry (~/.aagent/servers/<pid>-<port>.json). */
+/** Write one multi-server registry entry (~/.pokeagents/servers/<pid>-<port>.json). */
 function writeRegistryEntry(pid: number, port: number, token: string): void {
-  const dir = path.join(tmpBase, '.aagent', 'servers');
+  const dir = path.join(tmpBase, '.pokeagents', 'servers');
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(
     path.join(dir, `${pid}-${port}.json`),
@@ -235,7 +235,7 @@ describe('claude-hook.js integration', () => {
 
   // 10. Registry present but empty falls back to the legacy server.json
   itBuilt('falls back to legacy server.json when the registry directory is empty', async () => {
-    fs.mkdirSync(path.join(tmpBase, '.aagent', 'servers'), { recursive: true });
+    fs.mkdirSync(path.join(tmpBase, '.pokeagents', 'servers'), { recursive: true });
     const legacy = await startRecordingServer();
     writeServerJson(legacy.port, 'legacy-token');
 
