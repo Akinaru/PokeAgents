@@ -4,6 +4,7 @@ import {
   WALK_FRAME_DURATION_SEC,
   WALK_SPEED_PX_PER_SEC,
 } from '../../constants.js';
+import { createActivity } from '../../pokemon/activity.js';
 import { findPath } from '../layout/tileMap.js';
 import type { CharacterSprites } from '../sprites/spriteData.js';
 import { isReadingToolName } from '../toolUtils.js';
@@ -77,6 +78,7 @@ export function createCharacter(
     contextTokens: 0,
     maxContextTokens: DEFAULT_MAX_CONTEXT_TOKENS,
     tasksDone: 0,
+    activity: createActivity(),
   };
 }
 

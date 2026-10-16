@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import { POKEMON_ICON_URL, POKEMON_SCENE_SEC } from '../constants.js';
+import { POKEMON_ANIMATED_URL, POKEMON_SCENE_SEC } from '../constants.js';
 import { playEvolutionSound } from '../notificationSound.js';
 import type { PokemonMoment } from '../pokemon/moments.js';
 import { onPokemonMoment } from '../pokemon/moments.js';
@@ -8,7 +8,7 @@ import { onPokemonMoment } from '../pokemon/moments.js';
 type Scene = Extract<PokemonMoment, { kind: 'evolve' | 'shiny' }>;
 
 const spriteUrl = (dex: number, shiny: boolean): string =>
-  `${POKEMON_ICON_URL}/${shiny ? 'shiny/' : ''}${dex}.png`;
+  `${POKEMON_ANIMATED_URL}/${shiny ? 'shiny/' : ''}${dex}.gif`;
 
 /** Evolution timeline (fraction of the scene): old form, white flicker, new form. */
 const FLICKER_FROM = 0.3;

@@ -11,6 +11,7 @@ import pokedex from './pokedex.json';
  *  — see scripts/generate-pokedex.ts */
 type PokedexEntry = [number, string, number, number, number, number, number[], string];
 
+const FLAG_LEGENDARY = 1;
 const FLAG_SHINY_AVAILABLE = 2;
 
 interface Species {
@@ -24,6 +25,7 @@ interface Species {
   types: number[];
   /** French category, e.g. "Pokémon Souris". */
   genus: string;
+  legendary: boolean;
   parent: Species | null;
   evolutions: Species[];
 }
@@ -47,6 +49,7 @@ for (const [
     genderRate,
     types,
     genus,
+    legendary: (flags & FLAG_LEGENDARY) !== 0,
     parent: null,
     evolutions: [],
   });

@@ -38,13 +38,16 @@ export interface AgentVitals {
   /** Share of the context window still free, 0-1. */
   hp: number;
   hpTier: 'ok' | 'warn' | 'low';
-  /** "76k / 200k" — free tokens over the window. */
-  hpText: string;
+  /** Share of the context window used, 0-1. */
+  used: number;
+  /** "837k / 1M" — tokens used over the window. */
+  contextText: string;
   /** Progress toward the next evolution threshold, 0-1 (1 when fully evolved). */
   exp: number;
 }
 
-const kTokens = (n: number): string => `${Math.round(n / 1000)}k`;
+const kTokens = (n: number): string =>
+  n >= 1_000_000 ? `${Number((n / 1_000_000).toFixed(1))}M` : `${Math.round(n / 1000)}k`;
 
 export function agentVitals(ch: Character): AgentVitals {
   const used = ch.maxContextTokens > 0 ? Math.min(1, ch.contextTokens / ch.maxContextTokens) : 0;
@@ -55,7 +58,8 @@ export function agentVitals(ch: Character): AgentVitals {
   return {
     hp,
     hpTier: hp > 0.5 ? 'ok' : hp > 0.2 ? 'warn' : 'low',
-    hpText: `${kTokens(ch.maxContextTokens - ch.contextTokens)} / ${kTokens(ch.maxContextTokens)}`,
+    used,
+    contextText: `${kTokens(ch.contextTokens)} / ${kTokens(ch.maxContextTokens)}`,
     exp,
   };
 }

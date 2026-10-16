@@ -24,6 +24,7 @@ import {
 } from '../office/toolUtils.js';
 import type { OfficeLayout, ToolActivity } from '../office/types.js';
 import { setWallSprites } from '../office/wallTiles.js';
+import { recordTaskDone, recordToolUse } from '../pokemon/activity.js';
 import { emitPokemonMoment } from '../pokemon/moments.js';
 import { onPokedexLoaded } from '../pokemon/pokedex.js';
 import { characterPokemon, onPokemonSpritesLoaded } from '../pokemon/sprites.js';
@@ -384,6 +385,8 @@ export function useExtensionMessages(
         });
         const toolName = (msg.toolName as string | undefined) ?? extractToolName(status);
         os.setAgentTool(id, toolName);
+        const toolCh = os.characters.get(id);
+        if (toolCh) recordToolUse(toolCh.activity, toolId, toolName, status);
         os.setAgentActive(id, true);
         // Don't clear the permission bubble if the hook already confirmed permission is needed
         if (!permissionActive) {
@@ -504,6 +507,7 @@ export function useExtensionMessages(
           const ch = os.characters.get(id);
           if (ch && finishedTurn) {
             ch.tasksDone++;
+            recordTaskDone(ch.activity);
             const pokemon = characterPokemon(ch);
             if (pokemon) {
               emitPokemonMoment({

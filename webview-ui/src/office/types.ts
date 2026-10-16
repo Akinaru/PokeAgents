@@ -145,6 +145,8 @@ export interface AreaDefinition {
   color: string;
 }
 
+import type { AgentActivity } from '../pokemon/activity.js';
+
 export interface OfficeLayout {
   version: 1;
   cols: number;
@@ -252,6 +254,8 @@ export interface Character {
   maxContextTokens: number;
   /** Turns finished this session; the Pokémon's level is 1 + this. */
   tasksDone: number;
+  /** Tool use and journal for the Summary screen (see pokemon/activity.ts). */
+  activity: AgentActivity;
 }
 
 export const PetState = { IDLE: 'idle', WALK: 'walk', FOLLOW: 'follow' } as const;

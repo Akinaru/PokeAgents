@@ -1,7 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import type { PokedexEntry } from '../../../core/src/messages.js';
-import { POKEMON_EVOLUTION_THRESHOLDS, POKEMON_ICON_URL, POKEMON_TYPES } from '../constants.js';
+import {
+  POKEMON_ANIMATED_URL,
+  POKEMON_EVOLUTION_THRESHOLDS,
+  POKEMON_MINI_ICON_URL,
+  POKEMON_TYPES,
+} from '../constants.js';
 import { requestPokedex, usePokedex } from '../pokemon/pokedex.js';
 import { ALL_SPECIES, POKEDEX_SPECIES_COUNT, speciesInfo, speciesStage } from '../pokemon/roll.js';
 
@@ -11,7 +16,7 @@ interface PokedexModalProps {
 }
 
 const spriteUrl = (dex: number, shiny: boolean): string =>
-  `${POKEMON_ICON_URL}/${shiny ? 'shiny/' : ''}${dex}.png`;
+  `${POKEMON_ANIMATED_URL}/${shiny ? 'shiny/' : ''}${dex}.gif`;
 const pad = (dex: number): string => String(dex).padStart(3, '0');
 
 /** Black/White Pokédex: species list on the left, the selected species' card on the right. */
@@ -80,10 +85,10 @@ export function PokedexModal({ isOpen, onClose }: PokedexModalProps) {
                   onClick={() => setSelected(s.dex)}
                 >
                   <img
-                    src={spriteUrl(s.dex, false)}
+                    src={`${POKEMON_MINI_ICON_URL}/${s.dex}.png`}
                     alt=""
                     width={40}
-                    height={40}
+                    height={30}
                     loading="lazy"
                     style={{ imageRendering: 'pixelated', margin: '-8px 0' }}
                   />

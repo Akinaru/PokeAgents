@@ -319,9 +319,6 @@ export const POKEMON_EVOLVE_EFFECT_SEC = 1.6;
 /** Sparkles shown when a shiny Pokémon appears. */
 export const POKEMON_SHINY_EFFECT_SEC = 2;
 export const POKEMON_SPARKLE_COLOR = '#FFF6A8';
-/** Front sprites shown in the Pokédex (static PNGs, ~1 KB each). */
-export const POKEMON_ICON_URL =
-  'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white';
 /** A still Pokémon plays its Idle cycle once every MIN-MAX seconds. */
 export const POKEMON_IDLE_MIN_SEC = 4;
 export const POKEMON_IDLE_MAX_SEC = 9;
@@ -401,3 +398,15 @@ export const POKEMON_TYPES: Record<number, { name: string; color: string; top: s
 export const HUD_FLIP_BELOW_PX = 140;
 /** Gap between the nametag and a plate shown under the agent. */
 export const HUD_BELOW_GAP_PX = 22;
+
+// ── Agent battle screen ──────────────────────────────────────
+/** Animated battle sprites for every generation (front, back/, shiny/). */
+export const POKEMON_ANIMATED_URL =
+  'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/showdown';
+/** Item icons (Poké Balls, TMs, key items) used on buttons and tabs. */
+export const ITEM_ICON_URL =
+  'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items';
+/** Each agent's Poké Ball, picked from its seed. */
+export const AGENT_BALLS = ['poke-ball', 'great-ball', 'ultra-ball', 'premier-ball'] as const;
+/** Party slots on the touch screen, like the six balls of a team. */
+export const BATTLE_PARTY_SLOTS = 6;

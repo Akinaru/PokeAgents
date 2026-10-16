@@ -67,6 +67,7 @@ const species = (over: Record<string, unknown> = {}) => ({
   genderRate: 4,
   types: [12],
   genus: 'Pokémon Test',
+  legendary: false,
   parent: null,
   evolutions: [],
   ...over,

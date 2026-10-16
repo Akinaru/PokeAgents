@@ -18,16 +18,11 @@ import {
   STATUS_DOT,
   STATUS_LABEL,
 } from '../../pokemon/status.js';
+import { getActivityText, WAITING_INPUT_ACTIVITY_TEXT } from '../agentActivityText.js';
 import type { OfficeState } from '../engine/officeState.js';
 import { overlayProjection } from '../projection.js';
 import type { ToolActivity } from '../types.js';
 import { CharacterState } from '../types.js';
-
-// Both turn-end states show the green checkmark bubble. A finished turn (Stop)
-// shows ONLY the checkmark (the label falls through to its normal idle text);
-// going idle waiting on the user (Notification(idle_prompt)) additionally
-// surfaces this label. Driven by Character.waitingAwaitingInput.
-const WAITING_INPUT_ACTIVITY_TEXT = 'Waiting for input';
 
 interface ToolOverlayProps {
   officeState: OfficeState;
@@ -42,38 +37,6 @@ interface ToolOverlayProps {
   alwaysShowOverlay: boolean;
   /** Whether the canvas uses the tilted camera (everywhere but the layout editor). */
   tilted: boolean;
-}
-
-/** Derive a short human-readable activity string from tools/status */
-function getActivityText(
-  agentId: number,
-  agentTools: Record<number, ToolActivity[]>,
-  isActive: boolean,
-  bubbleType: 'permission' | 'waiting' | null,
-  waitingAwaitingInput: boolean,
-): string {
-  if (bubbleType === 'permission') return 'Needs approval';
-  // Only the idle case ("Waiting for input") gets a dedicated label. A finished
-  // turn (Stop, waitingAwaitingInput=false) falls through so the checkmark alone
-  // signals "done", same as the original behavior.
-  if (bubbleType === 'waiting' && waitingAwaitingInput) return WAITING_INPUT_ACTIVITY_TEXT;
-
-  const tools = agentTools[agentId];
-  if (tools && tools.length > 0) {
-    // Find the latest non-done tool
-    const activeTool = [...tools].reverse().find((t) => !t.done);
-    if (activeTool) {
-      if (activeTool.permissionWait) return 'Needs approval';
-      return activeTool.status;
-    }
-    // All tools done but agent still active (mid-turn) — keep showing last tool status
-    if (isActive) {
-      const lastTool = tools[tools.length - 1];
-      if (lastTool) return lastTool.status;
-    }
-  }
-
-  return 'Idle';
 }
 
 export function ToolOverlay({
@@ -220,7 +183,7 @@ export function ToolOverlay({
         const showContextGauge = !isSub && ch.contextTokens > 0;
 
         // The battle HUD plate of Black/White: name, sex, level, status, the
-        // context left as HP and the progress to the next evolution as EXP.
+        // context left as HP, and how much of the context is used.
         // Near the top edge the plate would be cut off: show it under the nametag instead
         const below = screenY < HUD_FLIP_BELOW_PX;
         return (
@@ -280,11 +243,10 @@ export function ToolOverlay({
                     </div>
                   </div>
                   <div className="bw-hud-row bw-text-dark" style={{ fontSize: 16, marginTop: 2 }}>
-                    <span style={{ fontSize: 14 }}>EXP</span>
-                    <div className="bw-exp" style={{ flex: 1 }}>
-                      <div style={{ width: `${vitals.exp * 100}%` }} />
-                    </div>
-                    <span>{vitals.hpText}</span>
+                    <span style={{ fontSize: 14 }}>Contexte utilisé</span>
+                    <span className="ml-auto">
+                      {vitals.contextText} · {Math.round(vitals.used * 100)} %
+                    </span>
                   </div>
                 </div>
               )}

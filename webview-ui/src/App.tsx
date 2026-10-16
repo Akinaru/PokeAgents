@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { toMajorMinor } from './changelogData.js';
+import { AgentBattle } from './components/AgentBattle.js';
 import { BottomToolbar } from './components/BottomToolbar.js';
 import { ChangelogModal } from './components/ChangelogModal.js';
 import { ConnectionIndicator } from './components/ConnectionIndicator.js';
@@ -110,6 +111,8 @@ function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isPartyOpen, setIsPartyOpen] = useState(false);
   const [isPokedexOpen, setIsPokedexOpen] = useState(false);
+  /** Agent whose battle screen is open (clicking a Pokémon opens it). */
+  const [battleAgentId, setBattleAgentId] = useState<number | null>(null);
   const [isHooksInfoOpen, setIsHooksInfoOpen] = useState(false);
   const [hooksTooltipDismissed, setHooksTooltipDismissed] = useState(false);
   const [isDebugMode, setIsDebugMode] = useState(false);
@@ -246,6 +249,14 @@ function App() {
     transport.send({ type: 'focusAgent', id: focusId });
   }, []);
 
+  // Clicking a Pokémon opens its battle screen (a sub-agent opens its parent's);
+  // the terminal is one button away from there.
+  const handleAgentClick = useCallback((agentId: number) => {
+    const meta = getOfficeState().subagentMeta.get(agentId);
+    setBattleAgentId(meta ? meta.parentAgentId : agentId);
+  }, []);
+  const closeBattle = useCallback(() => setBattleAgentId(null), []);
+
   const officeState = getOfficeState();
 
   // Merged set of folders the Areas dropdown can map: real workspace folders plus
@@ -343,7 +354,7 @@ function App() {
     <div ref={containerRef} className="w-full h-full relative overflow-hidden">
       <OfficeCanvas
         officeState={officeState}
-        onClick={handleClick}
+        onClick={handleAgentClick}
         isEditMode={editor.isEditMode}
         editorState={editorState}
         onEditorTileAction={editor.handleEditorTileAction}
@@ -550,6 +561,29 @@ function App() {
       )}
 
       <PokedexModal isOpen={isPokedexOpen} onClose={() => setIsPokedexOpen(false)} />
+      {battleAgentId !== null && officeState.characters.has(battleAgentId) && (
+        <AgentBattle
+          officeState={officeState}
+          agents={agents}
+          agentTools={agentTools}
+          agentId={battleAgentId}
+          routeName={routeName}
+          onSelectAgent={(id) => {
+            setBattleAgentId(id);
+            officeState.selectedAgentId = id;
+            officeState.cameraFollowId = id;
+          }}
+          onOpenTerminal={(id) => {
+            closeBattle();
+            handleClick(id);
+          }}
+          onOpenParty={() => {
+            closeBattle();
+            setIsPartyOpen(true);
+          }}
+          onClose={closeBattle}
+        />
+      )}
       <PartyModal
         isOpen={isPartyOpen}
         onClose={() => setIsPartyOpen(false)}

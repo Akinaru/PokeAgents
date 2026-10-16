@@ -27,6 +27,7 @@ import {
 import { createPet, updatePet } from '../src/office/engine/petEntity.js';
 import type { Character, TileType as TileTypeVal } from '../src/office/types.js';
 import { CharacterState, Direction, PetState, TileType } from '../src/office/types.js';
+import { createActivity } from '../src/pokemon/activity.js';
 
 // ── Helpers ────────────────────────────────────────────────────
 
@@ -83,6 +84,7 @@ function makeChar(id: number, col: number, row: number): Character {
     contextTokens: 0,
     maxContextTokens: 200_000,
     tasksDone: 0,
+    activity: createActivity(),
   };
 }
 

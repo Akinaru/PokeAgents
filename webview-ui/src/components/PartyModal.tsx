@@ -131,7 +131,7 @@ function PartySlot({ ch, onSelect }: { ch: Character; onSelect: () => void }) {
         <span className="overflow-hidden text-ellipsis whitespace-nowrap">
           {ch.folderName ?? '—'}
         </span>
-        <span className="ml-auto">{vitals.hpText}</span>
+        <span className="ml-auto">{vitals.contextText}</span>
       </div>
       <div className="bw-hp">
         <span className="bw-hp-label">PV</span>
