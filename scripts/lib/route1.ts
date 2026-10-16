@@ -5,8 +5,13 @@
  */
 import { jitter, rng } from './pixelCanvas.js';
 
-export const COLS = 40;
-export const ROWS = 20;
+export const COLS = 52;
+export const ROWS = 26;
+const MAP_W = COLS * 16;
+const MAP_H = ROWS * 16;
+/** Tile column / row at a fraction of the map, so the layout scales with its size. */
+export const col = (f: number): number => Math.round(f * COLS);
+export const row = (f: number): number => Math.round(f * ROWS);
 /** Layout `background` name, and the PNG file name of every painted version. */
 export const ROUTE_BACKGROUND = 'route-1';
 
@@ -36,20 +41,21 @@ function sideBranch(
 export const ROUTE_SHAPES: RouteShapes = {
   pathDepth(x, y) {
     // Main path winding north-south through the middle of the map
-    const cx = (COLS * 16) / 2 + 12 * Math.sin(y / 46) + 4 * Math.sin(y / 13);
+    const cx = MAP_W / 2 + 12 * Math.sin(y / 46) + 4 * Math.sin(y / 13);
     const main = 15 + jitter(y, 1) * 0.8 - Math.abs(x + 0.5 - cx);
     // Side paths: west to the meadow, east to the clearing
-    const west = sideBranch(x, y, cx, 150, (px) => 150 + 5 * Math.sin(px / 22));
-    const east = sideBranch(x, y, cx, 520, (px) => 236 + 4 * Math.sin(px / 19));
+    const west = sideBranch(x, y, cx, MAP_W * 0.22, (px) => MAP_H * 0.44 + 5 * Math.sin(px / 22));
+    const east = sideBranch(x, y, cx, MAP_W * 0.8, (px) => MAP_H * 0.72 + 4 * Math.sin(px / 19));
     return Math.max(main, west, east);
   },
   tallGrass: [
-    [25, 3, 7, 4],
-    [7, 13, 6, 3],
-    [33, 11, 4, 5],
-    [3, 3, 4, 3],
+    [col(0.6), 3, 9, 5],
+    [col(0.16), row(0.6), 7, 4],
+    [col(0.84), row(0.42), 5, 6],
+    [3, 3, 5, 4],
+    [col(0.34), row(0.8), 6, 3],
   ],
-  terraces: [[9, 2, 8, 5]],
+  terraces: [[col(0.2), 2, 9, 5]],
 };
 
 /** Whether (x, y) is plain grass, clear of the path and tall grass. */
@@ -65,8 +71,8 @@ function isOpenGrass(x: number, y: number): boolean {
 
 /** Seeded positions (world px) of small grass tufts and flower pairs on open grass. */
 export function routeDecor(): { tufts: Array<[number, number]>; flowers: Array<[number, number]> } {
-  const w = COLS * 16;
-  const h = ROWS * 16;
+  const w = MAP_W;
+  const h = MAP_H;
   const r = rng(77);
   // About one tuft per 16 tiles and one flower pair per 30 tiles
   const tuftCount = Math.round((COLS * ROWS) / 16);

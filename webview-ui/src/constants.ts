@@ -357,3 +357,11 @@ export const SLEEP_Z_RISE_PX = 14;
 export const SLEEP_Z_DRIFT_X_PX = 6;
 export const SLEEP_Z_COLOR = '#FFFFFF';
 export const SLEEP_Z_OUTLINE_COLOR = '#3A4A78';
+
+// ── Forest skirt (tilted view) ───────────────────────────────
+/** Tiles of decorative forest drawn beyond every map edge. */
+export const FOREST_SKIRT_TILES = 8;
+/** Furniture whose sprite fills the skirt. */
+export const FOREST_SKIRT_TREE = 'TREE';
+/** Ground under the skirt trees. */
+export const FOREST_FLOOR_COLOR = '#3f7a44';

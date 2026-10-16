@@ -24,6 +24,9 @@ import {
   DELETE_BUTTON_BG,
   EFFECT_Z_SORT_OFFSET,
   FALLBACK_FLOOR_COLOR,
+  FOREST_FLOOR_COLOR,
+  FOREST_SKIRT_TILES,
+  FOREST_SKIRT_TREE,
   GHOST_BORDER_HOVER_FILL,
   GHOST_BORDER_HOVER_STROKE,
   GHOST_BORDER_STROKE,
@@ -58,6 +61,7 @@ import { getPokemonSprite, isPokemonAsleep } from '../../pokemon/sprites.js';
 import type { TiltCamera } from '../camera.js';
 import { tiltCamera } from '../camera.js';
 import { getColorizedFloorSprite, hasFloorSprites, WALL_COLOR } from '../floorTiles.js';
+import { getCatalogEntry } from '../layout/furnitureCatalog.js';
 import { getMapBackground } from '../mapBackgrounds.js';
 import { mapOffset } from '../projection.js';
 import {
@@ -1051,7 +1055,8 @@ function groundCanvas(width: number, height: number): HTMLCanvasElement {
 }
 
 /** Warp the flat ground into the camera's perspective, one screen row at a
- *  time: each row samples the ground row it sees, stretched to its width. */
+ *  time: each row samples the ground row it sees, stretched to its width.
+ *  The ground canvas carries `margin` world px of forest skirt on every side. */
 function warpGround(
   ctx: CanvasRenderingContext2D,
   ground: HTMLCanvasElement,
@@ -1059,20 +1064,49 @@ function warpGround(
   cols: number,
   rows: number,
   zoom: number,
+  margin: number,
 ): void {
-  const width = cols * TILE_SIZE;
-  const top = Math.floor(camera.project(0, 0).y);
-  const bottom = Math.ceil(camera.project(0, rows * TILE_SIZE).y);
+  const left = -margin;
+  const right = cols * TILE_SIZE + margin;
+  const top = Math.floor(camera.project(0, -margin).y);
+  const bottom = Math.ceil(camera.project(0, rows * TILE_SIZE + margin).y);
   ctx.imageSmoothingEnabled = false;
-  for (let sy = top; sy < bottom; sy++) {
+  for (let sy = Math.max(top, 0); sy < Math.min(bottom, ctx.canvas.height); sy++) {
     const point = camera.unproject(0, sy + 0.5);
     if (!point) continue;
-    const srcRow = Math.floor(point.y * zoom);
+    const srcRow = Math.floor((point.y + margin) * zoom);
     if (srcRow < 0 || srcRow >= ground.height) continue;
-    const left = camera.project(0, point.y).x;
-    const right = camera.project(width, point.y).x;
-    ctx.drawImage(ground, 0, srcRow, ground.width, 1, left, sy, right - left, 1);
+    const x0 = camera.project(left, point.y).x;
+    const x1 = camera.project(right, point.y).x;
+    ctx.drawImage(ground, 0, srcRow, ground.width, 1, x0, sy, x1 - x0, 1);
   }
+}
+
+let skirtCache: { key: string; trees: FurnitureInstance[] } | null = null;
+
+/**
+ * Decorative forest around the map (tilted view only): rows of trees on the
+ * skirt beyond every edge, so a drag past the edge shows woods, not void.
+ * They are scenery only — never in the layout, never blocking anything.
+ */
+function forestSkirt(cols: number, rows: number): FurnitureInstance[] {
+  const tree = getCatalogEntry(FOREST_SKIRT_TREE)?.sprite;
+  if (!tree) return [];
+  const key = `${cols}x${rows}:${tree.length}`;
+  if (skirtCache?.key === key) return skirtCache.trees;
+  const trees: FurnitureInstance[] = [];
+  const m = FOREST_SKIRT_TILES;
+  for (let r = -m, line = 0; r < rows + m; r += 2, line++) {
+    for (let c = -m + (line % 2); c < cols + m; c += 2) {
+      // Only the ring outside the map (a tree covers 2×2 tiles)
+      if (c > -2 && c < cols && r > -2 && r < rows) continue;
+      const x = c * TILE_SIZE;
+      const y = (r + 2) * TILE_SIZE - tree.length;
+      trees.push({ sprite: tree, x, y, zY: y + tree.length });
+    }
+  }
+  skirtCache = { key, trees };
+  return trees;
 }
 
 export function renderFrame(
@@ -1115,11 +1149,17 @@ export function renderFrame(
 
   // Ground layer. With the camera it is drawn flat on an offscreen canvas,
   // then warped into perspective below.
-  const ground = camera ? groundCanvas(cols * TILE_SIZE * zoom, rows * TILE_SIZE * zoom) : null;
+  const skirt = camera ? FOREST_SKIRT_TILES * TILE_SIZE : 0;
+  const ground = camera
+    ? groundCanvas((cols * TILE_SIZE + 2 * skirt) * zoom, (rows * TILE_SIZE + 2 * skirt) * zoom)
+    : null;
   const gctx = ground ? ground.getContext('2d')! : ctx;
-  const gx = ground ? 0 : offsetX;
-  const gy = ground ? 0 : offsetY;
-  if (ground) gctx.clearRect(0, 0, ground.width, ground.height);
+  const gx = ground ? skirt * zoom : offsetX;
+  const gy = ground ? skirt * zoom : offsetY;
+  if (ground) {
+    gctx.fillStyle = FOREST_FLOOR_COLOR;
+    gctx.fillRect(0, 0, ground.width, ground.height);
+  }
 
   // Painted background, or the tiles (floor + wall base color) without one
   const backgroundImage = getMapBackground(background);
@@ -1162,11 +1202,12 @@ export function renderFrame(
     );
   }
 
-  if (ground && camera) warpGround(ctx, ground, camera, cols, rows, zoom);
+  if (ground && camera) warpGround(ctx, ground, camera, cols, rows, zoom, skirt);
 
   // Build wall instances for z-sorting with furniture and characters
   const wallInstances = hasWallSprites() ? getWallInstances(tileMap, tileColors, layoutCols) : [];
-  const allFurniture = wallInstances.length > 0 ? [...wallInstances, ...furniture] : furniture;
+  const skirtTrees = camera ? forestSkirt(cols, rows) : [];
+  const allFurniture = [...wallInstances, ...skirtTrees, ...furniture];
 
   // Draw walls + furniture + characters (z-sorted)
   const selectedId = selection?.selectedAgentId ?? null;

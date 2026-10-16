@@ -13,7 +13,7 @@ import * as path from 'path';
 import type { RGBA } from './lib/pixelCanvas.js';
 import { Canvas, gray, hex, jitter, rng, valueNoise } from './lib/pixelCanvas.js';
 import type { RouteShapes } from './lib/route1.js';
-import { COLS, ROUTE_BACKGROUND, ROUTE_SHAPES, ROWS, routeDecor } from './lib/route1.js';
+import { col, COLS, ROUTE_BACKGROUND, ROUTE_SHAPES, row, ROWS, routeDecor } from './lib/route1.js';
 
 const ASSETS_DIR = path.join(__dirname, '..', 'webview-ui', 'public', 'assets');
 
@@ -513,7 +513,7 @@ const furniture: FurnitureSpec[] = [
 // ── Default map: "Route 1" ──────────────────────────────────
 
 /** Bump to replace users' saved layouts with this map on their next load. */
-const ROUTE_LAYOUT_REVISION = 5;
+const ROUTE_LAYOUT_REVISION = 6;
 const BACKGROUNDS_DIR = path.join(__dirname, '..', 'webview-ui', 'src', 'assets', 'maps');
 const GRASS = 7;
 const PATH = 8;
@@ -567,15 +567,17 @@ function routeLayout(): Record<string, unknown> {
   }
   // Groves thickening the forest on both sides
   for (const [c, r] of [
-    [2, 7],
-    [2, 10],
-    [4, 16],
-    [2, 15],
-    [36, 3],
-    [36, 6],
-    [34, 16],
-    [36, 9],
-    [30, 15],
+    [2, 8],
+    [2, 11],
+    [4, 15],
+    [2, 18],
+    [5, 21],
+    [col(0.92), 3],
+    [col(0.92), 6],
+    [col(0.92), 16],
+    [col(0.88), 20],
+    [col(0.75), 21],
+    [col(0.45), 3],
   ]) {
     place('TREE', c, r);
   }
@@ -586,31 +588,34 @@ function routeLayout(): Record<string, unknown> {
   }
 
   // Spots where working Pokémon stand: the west meadow and the east clearing
+  const meadowC = col(0.2);
+  const clearingC = col(0.62);
+  const clearingR = row(0.55);
   for (const [c, r] of [
-    [10, 4],
-    [12, 4],
-    [14, 4],
-    [11, 6],
-    [13, 6],
-    [24, 11],
-    [27, 11],
-    [30, 11],
+    [meadowC + 1, 4],
+    [meadowC + 3, 4],
+    [meadowC + 5, 4],
+    [meadowC + 2, 6],
+    [meadowC + 4, 6],
+    [clearingC, clearingR],
+    [clearingC + 3, clearingR],
+    [clearingC + 6, clearingR],
   ]) {
     place('STUMP', c, r);
   }
-  place('ROUTE_SIGN', 22, 2);
+  place('ROUTE_SIGN', COLS / 2 + 2, 2);
   for (const [c, r] of [
-    [17, 6],
-    [8, 9],
-    [29, 8],
-    [23, 16],
-    [14, 11],
+    [col(0.42), 7],
+    [col(0.15), row(0.42)],
+    [col(0.72), row(0.38)],
+    [col(0.55), row(0.86)],
+    [col(0.3), row(0.55)],
   ]) {
     place('BUSH', c, r);
   }
-  place('ROCK', 15, 15);
-  place('ROCK', 32, 2);
-  place('ROCK', 5, 11);
+  place('ROCK', col(0.38), row(0.74));
+  place('ROCK', col(0.8), 2);
+  place('ROCK', col(0.12), row(0.52));
 
   return {
     version: 1,
