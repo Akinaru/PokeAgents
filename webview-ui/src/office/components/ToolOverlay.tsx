@@ -13,6 +13,10 @@ import {
   CONTEXT_GAUGE_HEIGHT_PX,
   CONTEXT_GAUGE_WIDTH_PX,
   CONTEXT_WARN_THRESHOLD,
+  NAMETAG_BG_COLOR,
+  NAMETAG_BORDER_COLOR,
+  NAMETAG_OFFSET_Y_PX,
+  NAMETAG_TEXT_COLOR,
   TEAM_LEAD_COLOR,
   TEAM_ROLE_COLOR,
   TOOL_OVERLAY_VERTICAL_OFFSET,
@@ -123,6 +127,29 @@ export function ToolOverlay({
 
   return (
     <>
+      {/* Always-visible nametag under each agent: its full project folder name */}
+      {agents.map((id) => {
+        const ch = officeState.characters.get(id);
+        if (!ch?.folderName || ch.isSubagent) return null;
+        return (
+          <div
+            key={`tag-${id}`}
+            className="absolute -translate-x-1/2 text-2xs leading-none whitespace-nowrap px-4 py-1"
+            style={{
+              left: project.toScreenX(ch.x),
+              top: project.toScreenY(ch.y + NAMETAG_OFFSET_Y_PX),
+              pointerEvents: 'none',
+              zIndex: 40,
+              color: NAMETAG_TEXT_COLOR,
+              background: NAMETAG_BG_COLOR,
+              border: `1px solid ${NAMETAG_BORDER_COLOR}`,
+            }}
+            data-testid="agent-nametag"
+          >
+            {ch.folderName}
+          </div>
+        );
+      })}
       {allIds.map((id) => {
         const ch = officeState.characters.get(id);
         if (!ch) return null;

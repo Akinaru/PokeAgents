@@ -336,3 +336,15 @@ export const POKEMON_CRY_VOLUME = 0.25;
 /** Front sprites shown in the Pokédex (static PNGs, ~1 KB each). */
 export const POKEMON_ICON_URL =
   'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white';
+/** A still Pokémon plays its Idle cycle once every MIN-MAX seconds. */
+export const POKEMON_IDLE_MIN_SEC = 4;
+export const POKEMON_IDLE_MAX_SEC = 9;
+/** The Charge cycle shown when a writing tool starts is slowed by this factor. */
+export const POKEMON_ACTION_SLOWDOWN = 3;
+
+// ── Nametags ─────────────────────────────────────────────────
+/** World px below the character anchor (its feet) where the nametag sits. */
+export const NAMETAG_OFFSET_Y_PX = 3;
+export const NAMETAG_TEXT_COLOR = '#FFFFFF';
+export const NAMETAG_BG_COLOR = 'rgba(24, 32, 40, 0.72)';
+export const NAMETAG_BORDER_COLOR = 'rgba(255, 255, 255, 0.25)';

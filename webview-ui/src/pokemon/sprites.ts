@@ -9,7 +9,13 @@
 import type { PokemonSpritesLoaded } from '../../../core/src/messages.js';
 import type { PokemonAnim } from '../../../core/src/pokemon/constants.js';
 import { POKEMON_ANIMS } from '../../../core/src/pokemon/constants.js';
-import { POKEMON_GROUND_OFFSET_PX, POKEMON_TICKS_PER_SEC } from '../constants.js';
+import {
+  POKEMON_ACTION_SLOWDOWN,
+  POKEMON_GROUND_OFFSET_PX,
+  POKEMON_IDLE_MAX_SEC,
+  POKEMON_IDLE_MIN_SEC,
+  POKEMON_TICKS_PER_SEC,
+} from '../constants.js';
 import { isReadingTool } from '../office/engine/characters.js';
 import type { Character, SpriteData } from '../office/types.js';
 import { CharacterState, Direction } from '../office/types.js';
@@ -127,8 +133,9 @@ function buildFrame(sheet: Sheet, row: number, col: number): SpriteData {
   return frame;
 }
 
+/** Frame of a sheet at `ticks` into the animation (clamped to the last frame). */
 function sheetFrame(sheet: Sheet, dir: Direction, ticks: number): SpriteData {
-  let t = ticks % sheet.totalTicks;
+  let t = ticks;
   let col = 0;
   while (col < sheet.durations.length - 1 && t >= sheet.durations[col]) {
     t -= sheet.durations[col];
@@ -144,16 +151,63 @@ function sheetFrame(sheet: Sheet, dir: Direction, ticks: number): SpriteData {
   return frame;
 }
 
-function animFor(ch: Character): PokemonAnim {
-  switch (ch.state) {
-    case CharacterState.WALK:
-      return 'Walk';
-    case CharacterState.TYPE:
-      if (!ch.isActive) return 'Sleep'; // resting on its spot between turns
-      return isReadingTool(ch.currentTool) ? 'Idle' : 'Charge';
-    default:
-      return ch.bubbleType === 'waiting' && ch.waitingAwaitingInput ? 'Sleep' : 'Idle';
+/**
+ * Animation pacing. Looping PMD idle/charge sheets reads as constant fidgeting,
+ * so a still Pokémon holds its rest pose (Idle frame 0) and only plays:
+ *  - its Idle cycle once every few seconds, as a small sign of life;
+ *  - its Charge cycle once, slowed down, each time it starts a writing tool.
+ */
+interface Pacing {
+  oneShot: { anim: PokemonAnim; startSec: number } | null;
+  nextIdleSec: number;
+  lastTool: string | null;
+}
+
+const pacing = new WeakMap<Character, Pacing>();
+
+const randomIdleDelay = (): number =>
+  POKEMON_IDLE_MIN_SEC + Math.random() * (POKEMON_IDLE_MAX_SEC - POKEMON_IDLE_MIN_SEC);
+
+function isAsleep(ch: Character): boolean {
+  // Resting on its spot between turns, or idle while waiting for the user.
+  if (ch.state === CharacterState.TYPE) return !ch.isActive;
+  return ch.bubbleType === 'waiting' && ch.waitingAwaitingInput === true;
+}
+
+function pokemonFrame(
+  ch: Character,
+  anims: Record<PokemonAnim, Sheet>,
+  timeSec: number,
+): SpriteData {
+  const loopTicks = (sheet: Sheet): number =>
+    Math.floor(timeSec * POKEMON_TICKS_PER_SEC) % sheet.totalTicks;
+  if (ch.state === CharacterState.WALK)
+    return sheetFrame(anims.Walk, ch.dir, loopTicks(anims.Walk));
+  if (isAsleep(ch)) return sheetFrame(anims.Sleep, ch.dir, loopTicks(anims.Sleep));
+
+  let p = pacing.get(ch);
+  if (!p) {
+    p = { oneShot: null, nextIdleSec: timeSec + randomIdleDelay(), lastTool: null };
+    pacing.set(ch, p);
   }
+  if (ch.currentTool !== p.lastTool) {
+    p.lastTool = ch.currentTool;
+    if (ch.state === CharacterState.TYPE && ch.currentTool && !isReadingTool(ch.currentTool)) {
+      p.oneShot = { anim: 'Charge', startSec: timeSec };
+    }
+  }
+  if (!p.oneShot && timeSec >= p.nextIdleSec) {
+    p.oneShot = { anim: 'Idle', startSec: timeSec };
+    p.nextIdleSec = timeSec + randomIdleDelay();
+  }
+  if (p.oneShot) {
+    const sheet = anims[p.oneShot.anim];
+    const slowdown = p.oneShot.anim === 'Charge' ? POKEMON_ACTION_SLOWDOWN : 1;
+    const ticks = ((timeSec - p.oneShot.startSec) * POKEMON_TICKS_PER_SEC) / slowdown;
+    if (ticks < sheet.totalTicks) return sheetFrame(sheet, ch.dir, ticks);
+    p.oneShot = null;
+  }
+  return sheetFrame(anims.Idle, ch.dir, 0);
 }
 
 /** Highest stage each character reached, so a compacted context never devolves it. */
@@ -191,7 +245,5 @@ export function getPokemonSprite(ch: Character, timeSec: number): SpriteData | n
     return null;
   }
   if (entry.status !== 'ready') return null;
-  // Offset each character's clock so identical Pokémon don't animate in lockstep.
-  const ticks = Math.floor(timeSec * POKEMON_TICKS_PER_SEC) + Math.abs(ch.id) * 7;
-  return sheetFrame(entry.anims[animFor(ch)], ch.dir, ticks);
+  return pokemonFrame(ch, entry.anims, timeSec);
 }
