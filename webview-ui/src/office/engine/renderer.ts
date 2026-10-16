@@ -49,6 +49,8 @@ import {
 import type { PokemonEffectKind } from '../../pokemon/effects.js';
 import { pokemonEffect } from '../../pokemon/effects.js';
 import { getPokemonSprite } from '../../pokemon/sprites.js';
+import type { TiltCamera } from '../camera.js';
+import { tiltCamera } from '../camera.js';
 import { getColorizedFloorSprite, hasFloorSprites, WALL_COLOR } from '../floorTiles.js';
 import { getMapBackground } from '../mapBackgrounds.js';
 import { mapOffset } from '../projection.js';
@@ -350,7 +352,39 @@ export function renderTileGrid(
 
 interface ZDrawable {
   zY: number;
+  /** World point the drawable stands on (bottom-center); the tilted camera
+   *  scales the drawable around it as an upright billboard. */
+  anchorX: number;
+  anchorY: number;
   draw: (ctx: CanvasRenderingContext2D) => void;
+}
+
+/**
+ * Draw something laid out in the flat view (device px from offsetX/offsetY) as
+ * an upright billboard of the tilted camera: moved to its anchor's projection
+ * and scaled by its distance. Without a camera, draws it flat as-is.
+ */
+function drawBillboard(
+  ctx: CanvasRenderingContext2D,
+  camera: TiltCamera | undefined,
+  anchorX: number,
+  anchorY: number,
+  offsetX: number,
+  offsetY: number,
+  zoom: number,
+  draw: (ctx: CanvasRenderingContext2D) => void,
+): void {
+  if (!camera) {
+    draw(ctx);
+    return;
+  }
+  const p = camera.project(anchorX, anchorY);
+  ctx.save();
+  ctx.translate(p.x, p.y);
+  ctx.scale(p.scale, p.scale);
+  ctx.translate(-(offsetX + anchorX * zoom), -(offsetY + anchorY * zoom));
+  draw(ctx);
+  ctx.restore();
 }
 
 /** @internal */
@@ -364,6 +398,7 @@ export function renderScene(
   selectedAgentId: number | null,
   hoveredAgentId: number | null,
   pets: Pet[] = [],
+  camera?: TiltCamera,
 ): void {
   const drawables: ZDrawable[] = [];
 
@@ -372,9 +407,13 @@ export function renderScene(
     const cached = getCachedSprite(f.sprite, zoom);
     const fx = offsetX + f.x * zoom;
     const fy = offsetY + f.y * zoom;
+    const anchorX = f.x + f.sprite[0].length / 2;
+    const anchorY = f.y + f.sprite.length;
     if (f.mirrored) {
       drawables.push({
         zY: f.zY,
+        anchorX,
+        anchorY,
         draw: (c) => {
           c.save();
           c.translate(fx + cached.width, fy);
@@ -386,6 +425,8 @@ export function renderScene(
     } else {
       drawables.push({
         zY: f.zY,
+        anchorX,
+        anchorY,
         draw: (c) => {
           c.drawImage(cached, fx, fy);
         },
@@ -411,6 +452,7 @@ export function renderScene(
     // in front of same-row furniture (e.g. chairs) but behind furniture
     // at lower rows (e.g. desks, bookshelves that occlude from below).
     const charZY = ch.y + TILE_SIZE / 2 + CHARACTER_Z_SORT_OFFSET;
+    const anchor = { anchorX: ch.x, anchorY: ch.y + sittingOffset };
 
     // Headless agents (adopted, no terminal to focus) render translucent while
     // the "Display headless as ghosts" setting is on.
@@ -424,6 +466,7 @@ export function renderScene(
       const mCh = ch;
       drawables.push({
         zY: charZY,
+        ...anchor,
         draw: (c) => {
           c.save();
           c.globalAlpha = alpha;
@@ -445,6 +488,7 @@ export function renderScene(
       const olDrawY = drawY - zoom; // outline follows sitting offset via drawY
       drawables.push({
         zY: charZY - OUTLINE_Z_SORT_OFFSET, // sort just before character
+        ...anchor,
         draw: (c) => {
           c.save();
           c.globalAlpha = outlineAlpha;
@@ -456,6 +500,7 @@ export function renderScene(
 
     drawables.push({
       zY: charZY,
+      ...anchor,
       draw: (c) => {
         if (alpha === 1) {
           c.drawImage(cached, drawX, drawY);
@@ -472,6 +517,7 @@ export function renderScene(
     if (effect) {
       drawables.push({
         zY: charZY + EFFECT_Z_SORT_OFFSET,
+        ...anchor,
         draw: (c) =>
           renderPokemonEffect(c, effect.kind, effect.progress, spriteData, drawX, drawY, zoom),
       });
@@ -495,6 +541,8 @@ export function renderScene(
 
     drawables.push({
       zY: petZY,
+      anchorX: pet.x,
+      anchorY: pet.y,
       draw: (c) => {
         c.drawImage(cached, drawX, drawY);
       },
@@ -505,7 +553,7 @@ export function renderScene(
   drawables.sort((a, b) => a.zY - b.zY);
 
   for (const d of drawables) {
-    d.draw(ctx);
+    drawBillboard(ctx, camera, d.anchorX, d.anchorY, offsetX, offsetY, zoom, d.draw);
   }
 }
 
@@ -822,6 +870,7 @@ function renderBubbles(
   offsetX: number,
   offsetY: number,
   zoom: number,
+  camera?: TiltCamera,
 ): void {
   for (const ch of characters) {
     if (!ch.bubbleType) continue;
@@ -849,10 +898,12 @@ function renderBubbles(
       offsetY + (ch.y + sittingOff - BUBBLE_VERTICAL_OFFSET_PX) * zoom - cached.height - 1 * zoom,
     );
 
-    ctx.save();
-    if (alpha < 1.0) ctx.globalAlpha = alpha;
-    ctx.drawImage(cached, bubbleX, bubbleY);
-    ctx.restore();
+    drawBillboard(ctx, camera, ch.x, ch.y + sittingOff, offsetX, offsetY, zoom, (c) => {
+      c.save();
+      if (alpha < 1.0) c.globalAlpha = alpha;
+      c.drawImage(cached, bubbleX, bubbleY);
+      c.restore();
+    });
   }
 }
 
@@ -862,6 +913,7 @@ function renderPetBubbles(
   offsetX: number,
   offsetY: number,
   zoom: number,
+  camera?: TiltCamera,
 ): void {
   for (const pet of pets) {
     if (!pet.bubbleType) continue;
@@ -881,10 +933,12 @@ function renderPetBubbles(
     const bubbleX = Math.round(offsetX + pet.x * zoom - cached.width / 2);
     const bubbleY = Math.round(offsetY + (pet.y - TILE_SIZE) * zoom - cached.height - 1 * zoom);
 
-    ctx.save();
-    if (alpha < 1.0) ctx.globalAlpha = alpha;
-    ctx.drawImage(cached, bubbleX, bubbleY);
-    ctx.restore();
+    drawBillboard(ctx, camera, pet.x, pet.y, offsetX, offsetY, zoom, (c) => {
+      c.save();
+      if (alpha < 1.0) c.globalAlpha = alpha;
+      c.drawImage(cached, bubbleX, bubbleY);
+      c.restore();
+    });
   }
 }
 
@@ -933,6 +987,41 @@ export interface SelectionRenderState {
   characters: Map<number, Character>;
 }
 
+let groundCanvasCache: HTMLCanvasElement | null = null;
+
+/** Offscreen canvas the flat ground is drawn on before the perspective warp. */
+function groundCanvas(width: number, height: number): HTMLCanvasElement {
+  if (!groundCanvasCache) groundCanvasCache = document.createElement('canvas');
+  if (groundCanvasCache.width !== width) groundCanvasCache.width = width;
+  if (groundCanvasCache.height !== height) groundCanvasCache.height = height;
+  return groundCanvasCache;
+}
+
+/** Warp the flat ground into the camera's perspective, one screen row at a
+ *  time: each row samples the ground row it sees, stretched to its width. */
+function warpGround(
+  ctx: CanvasRenderingContext2D,
+  ground: HTMLCanvasElement,
+  camera: TiltCamera,
+  cols: number,
+  rows: number,
+  zoom: number,
+): void {
+  const width = cols * TILE_SIZE;
+  const top = Math.floor(camera.project(0, 0).y);
+  const bottom = Math.ceil(camera.project(0, rows * TILE_SIZE).y);
+  ctx.imageSmoothingEnabled = false;
+  for (let sy = top; sy < bottom; sy++) {
+    const point = camera.unproject(0, sy + 0.5);
+    if (!point) continue;
+    const srcRow = Math.floor(point.y * zoom);
+    if (srcRow < 0 || srcRow >= ground.height) continue;
+    const left = camera.project(0, point.y).x;
+    const right = camera.project(width, point.y).x;
+    ctx.drawImage(ground, 0, srcRow, ground.width, 1, left, sy, right - left, 1);
+  }
+}
+
 export function renderFrame(
   ctx: CanvasRenderingContext2D,
   canvasWidth: number,
@@ -955,7 +1044,7 @@ export function renderFrame(
   activeAreaLabel?: string | null,
   pets?: Pet[],
   background?: string,
-): { offsetX: number; offsetY: number } {
+): { offsetX: number; offsetY: number; camera: TiltCamera | undefined } {
   // Clear
   ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
@@ -967,44 +1056,60 @@ export function renderFrame(
   // the DOM overlays so a label lands exactly on the sprite it belongs to.
   const { offsetX, offsetY } = mapOffset(canvasWidth, canvasHeight, cols, rows, zoom, panX, panY);
 
-  // Draw the painted background, or the tiles (floor + wall base color) without one
+  // Outside the layout editor the map is seen through the tilted camera; the
+  // editor keeps the flat top-down view so tiles can be placed precisely.
+  const camera = editor ? undefined : tiltCamera(offsetX, offsetY, cols, rows, zoom);
+
+  // Ground layer. With the camera it is drawn flat on an offscreen canvas,
+  // then warped into perspective below.
+  const ground = camera ? groundCanvas(cols * TILE_SIZE * zoom, rows * TILE_SIZE * zoom) : null;
+  const gctx = ground ? ground.getContext('2d')! : ctx;
+  const gx = ground ? 0 : offsetX;
+  const gy = ground ? 0 : offsetY;
+  if (ground) gctx.clearRect(0, 0, ground.width, ground.height);
+
+  // Painted background, or the tiles (floor + wall base color) without one
   const backgroundImage = getMapBackground(background);
   if (backgroundImage) {
-    ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(
+    gctx.imageSmoothingEnabled = false;
+    gctx.drawImage(
       backgroundImage,
-      offsetX,
-      offsetY,
+      gx,
+      gy,
       backgroundImage.naturalWidth * zoom,
       backgroundImage.naturalHeight * zoom,
     );
   } else {
-    renderTileGrid(ctx, tileMap, offsetX, offsetY, zoom, tileColors, layoutCols);
+    renderTileGrid(gctx, tileMap, gx, gy, zoom, tileColors, layoutCols);
   }
 
   // Carpet layer (above floor, below seat indicators / furniture / characters)
   if (carpetTiles && carpetTiles.length > 0) {
-    renderCarpetLayer(ctx, carpetTiles, cols, rows, offsetX, offsetY, zoom);
+    renderCarpetLayer(gctx, carpetTiles, cols, rows, gx, gy, zoom);
   }
 
   // Area overlay (translucent color wash) — above carpets, below seat indicators
   if (showAreas) {
-    renderAreaOverlay(ctx, areaTiles, areas, cols, rows, offsetX, offsetY, zoom, activeAreaLabel);
+    renderAreaOverlay(gctx, areaTiles, areas, cols, rows, gx, gy, zoom, activeAreaLabel);
+    // Tilted, labels lie on the ground with their areas instead of floating
+    if (ground) renderAreaLabels(gctx, areaTiles, areas, cols, rows, gx, gy, zoom);
   }
 
   // Seat indicators (below furniture/characters, on top of floor)
   if (selection) {
     renderSeatIndicators(
-      ctx,
+      gctx,
       selection.seats,
       selection.characters,
       selection.selectedAgentId,
       selection.hoveredTile,
-      offsetX,
-      offsetY,
+      gx,
+      gy,
       zoom,
     );
   }
+
+  if (ground && camera) warpGround(ctx, ground, camera, cols, rows, zoom);
 
   // Build wall instances for z-sorting with furniture and characters
   const wallInstances = hasWallSprites() ? getWallInstances(tileMap, tileColors, layoutCols) : [];
@@ -1023,17 +1128,18 @@ export function renderFrame(
     selectedId,
     hoveredId,
     pets ?? [],
+    camera,
   );
 
   // Speech bubbles (always on top of characters)
-  renderBubbles(ctx, characters, offsetX, offsetY, zoom);
+  renderBubbles(ctx, characters, offsetX, offsetY, zoom, camera);
   // Pet heart bubbles (same overlay pass)
   if (pets && pets.length > 0) {
-    renderPetBubbles(ctx, pets, offsetX, offsetY, zoom);
+    renderPetBubbles(ctx, pets, offsetX, offsetY, zoom, camera);
   }
 
   // Area labels (above bubbles + characters, below editor overlays)
-  if (showAreas) {
+  if (showAreas && !camera) {
     renderAreaLabels(ctx, areaTiles, areas, cols, rows, offsetX, offsetY, zoom);
   }
 
@@ -1108,5 +1214,5 @@ export function renderFrame(
     }
   }
 
-  return { offsetX, offsetY };
+  return { offsetX, offsetY, camera };
 }

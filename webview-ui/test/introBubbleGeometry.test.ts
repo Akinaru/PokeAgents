@@ -33,6 +33,7 @@ function roomyFrame(overrides: Partial<IntroBubbleFrame> = {}): IntroBubbleFrame
     zoom: 2,
     pan: { x: 0, y: 0 },
     dpr: 1,
+    tilted: false,
     greeter: { x: 10 * TILE_SIZE, y: 5 * TILE_SIZE },
     bubbleWidth: 300,
     bubbleHeight: 150,

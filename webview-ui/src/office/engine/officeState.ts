@@ -16,6 +16,7 @@ import {
   PET_HIT_HEIGHT,
   WAITING_BUBBLE_DURATION_SEC,
 } from '../../constants.js';
+import type { BillboardHit } from '../camera.js';
 import { getAnimationFrames, getCatalogEntry, getOnStateType } from '../layout/furnitureCatalog.js';
 import {
   createDefaultLayout,
@@ -982,14 +983,15 @@ export class OfficeState {
    * so the visually-frontmost pet receives the click.
    * Returns the pet id or null.
    */
-  getPetAt(worldX: number, worldY: number): string | null {
+  getPetAt(worldX: number, worldY: number, toBillboard?: BillboardHit): string | null {
     const ordered = this.pets.slice().sort((a, b) => b.y - a.y);
     for (const pet of ordered) {
+      const { x: px, y: py } = toBillboard?.(pet.x, pet.y) ?? { x: worldX, y: worldY };
       const left = pet.x - PET_HIT_HALF_WIDTH;
       const right = pet.x + PET_HIT_HALF_WIDTH;
       const top = pet.y - PET_HIT_HEIGHT;
       const bottom = pet.y;
-      if (worldX >= left && worldX <= right && worldY >= top && worldY <= bottom) {
+      if (px >= left && px <= right && py >= top && py <= bottom) {
         return pet.id;
       }
     }
@@ -1177,8 +1179,9 @@ export class OfficeState {
 
   /** Get character at pixel position (for hit testing). Returns id or null.
    *  Agents only: clicks pass straight through the consent greeter, which is
-   *  a prop, not something to select or follow. */
-  getCharacterAt(worldX: number, worldY: number): number | null {
+   *  a prop, not something to select or follow. With the tilted camera,
+   *  `toBillboard` maps the cursor into each character's upright plane. */
+  getCharacterAt(worldX: number, worldY: number, toBillboard?: BillboardHit): number | null {
     const chars = Array.from(this.characters.values()).sort((a, b) => b.y - a.y);
     for (const ch of chars) {
       // Skip characters that are despawning
@@ -1191,7 +1194,8 @@ export class OfficeState {
       const right = ch.x + CHARACTER_HIT_HALF_WIDTH;
       const top = anchorY - CHARACTER_HIT_HEIGHT;
       const bottom = anchorY;
-      if (worldX >= left && worldX <= right && worldY >= top && worldY <= bottom) {
+      const { x, y } = toBillboard?.(ch.x, anchorY) ?? { x: worldX, y: worldY };
+      if (x >= left && x <= right && y >= top && y <= bottom) {
         return ch.id;
       }
     }

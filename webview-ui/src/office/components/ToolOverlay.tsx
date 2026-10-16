@@ -45,6 +45,8 @@ interface ToolOverlayProps {
   panRef: React.RefObject<{ x: number; y: number }>;
   onCloseAgent: (id: number) => void;
   alwaysShowOverlay: boolean;
+  /** Whether the canvas uses the tilted camera (everywhere but the layout editor). */
+  tilted: boolean;
 }
 
 /** Derive a short human-readable activity string from tools/status */
@@ -97,6 +99,7 @@ export function ToolOverlay({
   panRef,
   onCloseAgent,
   alwaysShowOverlay,
+  tilted,
 }: ToolOverlayProps) {
   const [, setTick] = useState(0);
   useEffect(() => {
@@ -117,6 +120,7 @@ export function ToolOverlay({
     zoom,
     panRef.current,
     window.devicePixelRatio || 1,
+    tilted,
   );
 
   const selectedId = officeState.selectedAgentId;
@@ -136,8 +140,8 @@ export function ToolOverlay({
             key={`tag-${id}`}
             className="absolute -translate-x-1/2 text-2xs leading-none whitespace-nowrap px-4 py-1"
             style={{
-              left: project.toScreenX(ch.x),
-              top: project.toScreenY(ch.y + NAMETAG_OFFSET_Y_PX),
+              left: project.toScreen(ch.x, ch.y).x,
+              top: project.toScreen(ch.x, ch.y, -NAMETAG_OFFSET_Y_PX).y,
               pointerEvents: 'none',
               zIndex: 40,
               color: NAMETAG_TEXT_COLOR,
@@ -163,8 +167,11 @@ export function ToolOverlay({
 
         // Position above character
         const sittingOffset = ch.state === CharacterState.TYPE ? CHARACTER_SITTING_OFFSET_PX : 0;
-        const screenX = project.toScreenX(ch.x);
-        const screenY = project.toScreenY(ch.y + sittingOffset - TOOL_OVERLAY_VERTICAL_OFFSET);
+        const { x: screenX, y: screenY } = project.toScreen(
+          ch.x,
+          ch.y + sittingOffset,
+          TOOL_OVERLAY_VERTICAL_OFFSET,
+        );
 
         // A "Done" agent (finished turn: waiting bubble without awaitingInput)
         // shows ONLY its floating green checkmark bubble, never the label panel

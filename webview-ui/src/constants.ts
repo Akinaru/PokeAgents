@@ -348,3 +348,9 @@ export const NAMETAG_OFFSET_Y_PX = 3;
 export const NAMETAG_TEXT_COLOR = '#FFFFFF';
 export const NAMETAG_BG_COLOR = 'rgba(24, 32, 40, 0.72)';
 export const NAMETAG_BORDER_COLOR = 'rgba(255, 255, 255, 0.25)';
+
+// ── Tilted camera (Black/White style) ────────────────────────
+/** Camera pitch below the horizon; 90 would be straight top-down. */
+export const TILT_PITCH_DEG = 52;
+/** Camera distance from the map center, in world px. Smaller = stronger perspective. */
+export const TILT_DISTANCE_WORLD = 480;

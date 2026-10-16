@@ -14,6 +14,7 @@
  * graph that imports it.
  */
 
+import { tiltCamera } from './camera.js';
 import { TILE_SIZE } from './types.js';
 
 /** Device-pixel offset of the map's top-left corner inside the canvas.
@@ -39,8 +40,10 @@ export function mapOffset(
 /** Projects world points into CSS pixels within the overlay container that
  *  sits on top of the canvas. */
 export interface OverlayProjection {
-  toScreenX(worldX: number): number;
-  toScreenY(worldY: number): number;
+  /** CSS px of a point `lift` world px above the ground point (worldX, worldY).
+   *  Under the tilted camera the lift scales with distance, like the billboard
+   *  sprite it labels. */
+  toScreen(worldX: number, worldY: number, lift?: number): { x: number; y: number };
   /** Container size in world units — what the viewport currently covers.
    *  Used to cap overlay offsets against the visible area. */
   readonly viewportWorldWidth: number;
@@ -55,6 +58,8 @@ export function overlayProjection(
   zoom: number,
   pan: { x: number; y: number },
   dpr: number,
+  /** Whether the canvas uses the tilted camera (everywhere but the layout editor). */
+  tilted: boolean,
 ): OverlayProjection {
   const canvasW = Math.round(containerRect.width * dpr);
   const canvasH = Math.round(containerRect.height * dpr);
@@ -67,9 +72,15 @@ export function overlayProjection(
     pan.x,
     pan.y,
   );
+  const camera = tilted ? tiltCamera(offsetX, offsetY, layout.cols, layout.rows, zoom) : undefined;
   return {
-    toScreenX: (worldX) => (offsetX + worldX * zoom) / dpr,
-    toScreenY: (worldY) => (offsetY + worldY * zoom) / dpr,
+    toScreen: (worldX, worldY, lift = 0) => {
+      if (!camera) {
+        return { x: (offsetX + worldX * zoom) / dpr, y: (offsetY + (worldY - lift) * zoom) / dpr };
+      }
+      const p = camera.project(worldX, worldY);
+      return { x: p.x / dpr, y: (p.y - lift * zoom * p.scale) / dpr };
+    },
     viewportWorldWidth: canvasW / zoom,
     viewportWorldHeight: canvasH / zoom,
     toWorldLength: (cssPx) => (cssPx * dpr) / zoom,

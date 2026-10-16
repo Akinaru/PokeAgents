@@ -436,6 +436,7 @@ function App() {
             panRef={editor.panRef}
             onCloseAgent={handleCloseAgent}
             alwaysShowOverlay={alwaysShowOverlay}
+            tilted={!editor.isEditMode}
           />
         </>
       ) : (
@@ -587,6 +588,7 @@ function App() {
           containerRef={containerRef}
           zoom={editor.zoom}
           panRef={editor.panRef}
+          tilted={!editor.isEditMode}
           installFailed={installFailed}
           installPending={installPending}
           onChoice={handleConsentChoice}

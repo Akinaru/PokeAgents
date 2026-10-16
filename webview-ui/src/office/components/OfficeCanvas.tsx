@@ -10,6 +10,7 @@ import {
 } from '../../constants.js';
 import { unlockAudio } from '../../notificationSound.js';
 import { transport } from '../../transport/index.js';
+import type { BillboardHit, TiltCamera } from '../camera.js';
 import { getColorizedSprite } from '../colorize.js';
 import { canPlaceFurniture, getWallPlacementRow } from '../editor/editorActions.js';
 import type { EditorState } from '../editor/editorState.js';
@@ -68,6 +69,8 @@ export function OfficeCanvas({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const offsetRef = useRef({ x: 0, y: 0 });
+  /** Tilted camera of the last frame (undefined in the flat editor view). */
+  const cameraRef = useRef<TiltCamera | undefined>(undefined);
   // Middle-mouse pan state (imperative, no re-renders)
   const isPanningRef = useRef(false);
   const panStartRef = useRef({ mouseX: 0, mouseY: 0, panX: 0, panY: 0 });
@@ -273,7 +276,7 @@ export function OfficeCanvas({
         };
 
         const layout = officeState.getLayout();
-        const { offsetX, offsetY } = renderFrame(
+        const { offsetX, offsetY, camera } = renderFrame(
           ctx,
           w,
           h,
@@ -297,6 +300,7 @@ export function OfficeCanvas({
           layout.background,
         );
         offsetRef.current = { x: offsetX, y: offsetY };
+        cameraRef.current = camera;
 
         // Store delete/rotate button bounds for hit-testing
         deleteButtonBoundsRef.current = editorRender?.deleteButtonBounds ?? null;
@@ -333,10 +337,16 @@ export function OfficeCanvas({
       // Convert to device pixels
       const deviceX = cssX * dpr;
       const deviceY = cssY * dpr;
-      // Convert to world (sprite pixel) coords
-      const worldX = (deviceX - offsetRef.current.x) / zoom;
-      const worldY = (deviceY - offsetRef.current.y) / zoom;
-      return { worldX, worldY, screenX: cssX, screenY: cssY, deviceX, deviceY };
+      // Convert to world (sprite pixel) coords: the ground point under the
+      // cursor, plus where it falls on upright billboards for hit tests.
+      const camera = cameraRef.current;
+      const ground = camera?.unproject(deviceX, deviceY);
+      const worldX = camera ? (ground?.x ?? -Infinity) : (deviceX - offsetRef.current.x) / zoom;
+      const worldY = camera ? (ground?.y ?? -Infinity) : (deviceY - offsetRef.current.y) / zoom;
+      const toBillboard: BillboardHit | undefined = camera
+        ? (anchorX, anchorY) => camera.billboardPoint(deviceX, deviceY, anchorX, anchorY)
+        : undefined;
+      return { worldX, worldY, toBillboard, screenX: cssX, screenY: cssY, deviceX, deviceY };
     },
     [zoom],
   );
@@ -502,9 +512,10 @@ export function OfficeCanvas({
 
       const pos = screenToWorld(e.clientX, e.clientY);
       if (!pos) return;
-      const hitId = officeState.getCharacterAt(pos.worldX, pos.worldY);
+      const hitId = officeState.getCharacterAt(pos.worldX, pos.worldY, pos.toBillboard);
       // Only run pet hit-test if no character was hit (avoids redundant work).
-      const petId = hitId === null ? officeState.getPetAt(pos.worldX, pos.worldY) : null;
+      const petId =
+        hitId === null ? officeState.getPetAt(pos.worldX, pos.worldY, pos.toBillboard) : null;
       const tile = screenToTile(e.clientX, e.clientY);
       officeState.hoveredTile = tile;
       const canvas = canvasRef.current;
@@ -724,7 +735,7 @@ export function OfficeCanvas({
       const pos = screenToWorld(e.clientX, e.clientY);
       if (!pos) return;
 
-      const hitId = officeState.getCharacterAt(pos.worldX, pos.worldY);
+      const hitId = officeState.getCharacterAt(pos.worldX, pos.worldY, pos.toBillboard);
       if (hitId !== null) {
         // Dismiss any active bubble on click
         officeState.dismissBubble(hitId);
@@ -741,7 +752,7 @@ export function OfficeCanvas({
       }
 
       // Pet hit: toggle the heart bubble.
-      const petId = officeState.getPetAt(pos.worldX, pos.worldY);
+      const petId = officeState.getPetAt(pos.worldX, pos.worldY, pos.toBillboard);
       if (petId !== null) {
         const pet = officeState.pets.find((p) => p.id === petId);
         if (pet?.bubbleType) {

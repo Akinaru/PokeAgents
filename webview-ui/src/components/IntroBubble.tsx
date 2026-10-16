@@ -26,6 +26,8 @@ interface IntroBubbleProps {
   containerRef: React.RefObject<HTMLDivElement | null>;
   zoom: number;
   panRef: React.RefObject<{ x: number; y: number }>;
+  /** Whether the canvas uses the tilted camera (everywhere but the layout editor). */
+  tilted: boolean;
   /** The closing step's verdict: the install this tour asked for FAILED. The
    *  tour must not congratulate a user whose install failed. Owned by
    *  useIntroTour, which sees `hooksStatus` arrive and knows what this tour
@@ -100,6 +102,7 @@ export function IntroBubble({
   containerRef,
   zoom,
   panRef,
+  tilted,
   installFailed,
   installPending,
   onChoice,
@@ -144,6 +147,7 @@ export function IntroBubble({
             zoom,
             pan: panRef.current,
             dpr: window.devicePixelRatio || 1,
+            tilted,
             greeter: ch,
             bubbleWidth: bubble.offsetWidth,
             bubbleHeight: bubble.offsetHeight,
@@ -155,7 +159,7 @@ export function IntroBubble({
     };
     rafId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafId);
-  }, [officeState, zoom, containerRef, panRef]);
+  }, [officeState, zoom, containerRef, panRef, tilted]);
 
   // The held install's verdict arrived (installPending fell): move on to the
   // closing step. Back is disabled while pending, so the fall can only ever
@@ -194,6 +198,7 @@ export function IntroBubble({
       zoom,
       pan: panRef.current,
       dpr: window.devicePixelRatio || 1,
+      tilted,
       greeter,
       bubbleWidth: bw,
       bubbleHeight: bh,

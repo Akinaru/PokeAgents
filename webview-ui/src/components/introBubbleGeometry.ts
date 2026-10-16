@@ -28,6 +28,8 @@ export interface IntroBubbleFrame {
   zoom: number;
   pan: { x: number; y: number };
   dpr: number;
+  /** Whether the canvas uses the tilted camera. */
+  tilted: boolean;
   /** Greeter anchor (feet), world coords. */
   greeter: { x: number; y: number };
   /** The bubble's measured box in CSS px (0×0 until the first layout pass). */
@@ -51,13 +53,23 @@ export interface IntroBubbleGeometry {
 
 export function computeIntroBubbleGeometry(frame: IntroBubbleFrame): IntroBubbleGeometry {
   const { greeter, containerRect, bubbleWidth, bubbleHeight } = frame;
-  const project = overlayProjection(frame.layout, containerRect, frame.zoom, frame.pan, frame.dpr);
+  const project = overlayProjection(
+    frame.layout,
+    containerRect,
+    frame.zoom,
+    frame.pan,
+    frame.dpr,
+    frame.tilted,
+  );
   const margin = INTRO_BUBBLE_EDGE_MARGIN_PX;
 
   // Anchor the bubble's bottom-left up-right of the greeter's head, clamped
   // into the container.
-  const anchorX = project.toScreenX(greeter.x + INTRO_BUBBLE_OFFSET_X_WORLD);
-  const anchorY = project.toScreenY(greeter.y - INTRO_BUBBLE_ANCHOR_RISE_WORLD);
+  const { x: anchorX, y: anchorY } = project.toScreen(
+    greeter.x + INTRO_BUBBLE_OFFSET_X_WORLD,
+    greeter.y,
+    INTRO_BUBBLE_ANCHOR_RISE_WORLD,
+  );
   const left = Math.max(margin, Math.min(anchorX, containerRect.width - bubbleWidth - margin));
   const top = Math.max(
     margin,
@@ -71,8 +83,11 @@ export function computeIntroBubbleGeometry(frame: IntroBubbleFrame): IntroBubble
   // from its preferred spot above the character.
   let tailSquares: IntroBubbleGeometry['tailSquares'] = [];
   if (bubbleWidth > 0 && bubbleHeight > 0) {
-    const headX = project.toScreenX(greeter.x);
-    const headY = project.toScreenY(greeter.y - INTRO_TAIL_TARGET_RISE_WORLD);
+    const { x: headX, y: headY } = project.toScreen(
+      greeter.x,
+      greeter.y,
+      INTRO_TAIL_TARGET_RISE_WORLD,
+    );
     const edgeX = Math.max(left, Math.min(headX, left + bubbleWidth));
     const edgeY = Math.max(top, Math.min(headY, top + bubbleHeight));
     tailSquares = INTRO_TAIL_STEPS.map(({ t, size }) => ({
