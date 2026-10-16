@@ -133,6 +133,30 @@ export function rollPokemon(seed: number): RolledPokemon {
   return rolled;
 }
 
+/**
+ * Today's wild Pokémon: `count` different common base species (weighted by
+ * capture rate, legendaries excluded), never shiny.
+ */
+export function rollWildPokemon(seed: number, count: number): PokemonForm[] {
+  const rand = prng(seed ^ 0x5eed);
+  const pool = baseSpecies.filter((s) => !s.legendary);
+  const forms: PokemonForm[] = [];
+  while (forms.length < count && pool.length > 0) {
+    let pick = rand() * pool.reduce((sum, s) => sum + s.captureRate, 0);
+    let index = pool.length - 1;
+    for (let i = 0; i < pool.length; i++) {
+      pick -= pool[i].captureRate;
+      if (pick < 0) {
+        index = i;
+        break;
+      }
+    }
+    const [species] = pool.splice(index, 1);
+    forms.push(pokemonForm({ line: [species], shiny: false, genderRoll: rand() }, 0));
+  }
+  return forms;
+}
+
 /** Evolution stage reached for a context-window fill ratio (0-1). */
 export function evolutionStage(rolled: RolledPokemon, contextRatio: number): number {
   let stage = 0;

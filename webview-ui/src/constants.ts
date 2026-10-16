@@ -325,9 +325,32 @@ export const POKEMON_IDLE_MAX_SEC = 9;
 /** The Charge cycle shown when a writing tool starts is slowed by this factor. */
 export const POKEMON_ACTION_SLOWDOWN = 3;
 
+// ── Work spots ───────────────────────────────────────────────
+/** A working agent leaves its first spot after MIN-MAX seconds... */
+export const WORK_SPOT_FIRST_MIN_SEC = 5;
+export const WORK_SPOT_FIRST_MAX_SEC = 9;
+/** ...then stays MIN-MAX seconds at each spot before moving on. */
+export const WORK_SPOT_DWELL_MIN_SEC = 9;
+export const WORK_SPOT_DWELL_MAX_SEC = 18;
+/** Agents keep at least this many tiles (Chebyshev) between each other's spots. */
+export const WORK_SPOT_MIN_SPACING_TILES = 6;
+/** Spots farther than this (Manhattan) are only used when none is closer. */
+export const WORK_SPOT_MAX_DISTANCE_TILES = 16;
+
+// ── Wild Pokémon ─────────────────────────────────────────────
+/** Wild Pokémon roaming the route, a new set every day. */
+export const WILD_POKEMON_COUNT = 5;
+
 // ── Nametags ─────────────────────────────────────────────────
 /** World px below the character anchor (its feet) where the nametag sits. */
 export const NAMETAG_OFFSET_Y_PX = 3;
+/** Nametags longer than this (screen px) end with an ellipsis. */
+export const NAMETAG_MAX_WIDTH_PX = 240;
+/** Estimated width of one nametag character, and the dot + padding around the text. */
+export const NAMETAG_CHAR_WIDTH_PX = 9;
+export const NAMETAG_CHROME_WIDTH_PX = 30;
+/** Height of a nametag: an overlapping tag is pushed down by this much. */
+export const NAMETAG_HEIGHT_PX = 24;
 
 // ── Tilted camera (Black/White style) ────────────────────────
 /** Camera pitch below the horizon; 90 would be straight top-down. */

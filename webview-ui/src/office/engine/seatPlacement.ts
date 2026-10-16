@@ -54,3 +54,33 @@ export function closestFreeSeat(
   }
   return best;
 }
+
+/**
+ * Among candidate seats, those farthest from every assigned seat (Chebyshev),
+ * so agents spread out instead of standing shoulder to shoulder.
+ */
+export function farthestSeats(
+  candidates: readonly string[],
+  seats: ReadonlyMap<string, SeatLike>,
+): string[] {
+  const taken = [...seats.values()].filter((s) => s.assigned);
+  if (taken.length === 0) return [...candidates];
+  let best: string[] = [];
+  let bestDist = -1;
+  for (const uid of candidates) {
+    const seat = seats.get(uid);
+    if (!seat) continue;
+    const d = Math.min(
+      ...taken.map((t) =>
+        Math.max(Math.abs(t.seatCol - seat.seatCol), Math.abs(t.seatRow - seat.seatRow)),
+      ),
+    );
+    if (d > bestDist) {
+      best = [uid];
+      bestDist = d;
+    } else if (d === bestDist) {
+      best.push(uid);
+    }
+  }
+  return best;
+}

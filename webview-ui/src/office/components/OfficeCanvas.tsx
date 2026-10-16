@@ -340,7 +340,7 @@ export function OfficeCanvas({
           layout.areaTiles,
           showAreas,
           activeAreaLabel,
-          officeState.pets,
+          [...officeState.pets, ...officeState.wildPokemon],
           layout.background,
         );
         offsetRef.current = { x: offsetX, y: offsetY };

@@ -3,6 +3,10 @@ import {
   TYPE_FRAME_DURATION_SEC,
   WALK_FRAME_DURATION_SEC,
   WALK_SPEED_PX_PER_SEC,
+  WORK_SPOT_DWELL_MAX_SEC,
+  WORK_SPOT_DWELL_MIN_SEC,
+  WORK_SPOT_FIRST_MAX_SEC,
+  WORK_SPOT_FIRST_MIN_SEC,
 } from '../../constants.js';
 import { createActivity } from '../../pokemon/activity.js';
 import { findPath } from '../layout/tileMap.js';
@@ -10,6 +14,13 @@ import type { CharacterSprites } from '../sprites/spriteData.js';
 import { isReadingToolName } from '../toolUtils.js';
 import type { Character, Seat, SpriteData, TileType as TileTypeVal } from '../types.js';
 import { CharacterState, Direction, TILE_SIZE } from '../types.js';
+import type { WorkSpot } from './workSpots.js';
+
+const randomRange = (min: number, max: number): number => min + Math.random() * (max - min);
+
+/** Delay before a working agent leaves for its first spot. */
+export const firstWorkDelay = (): number =>
+  randomRange(WORK_SPOT_FIRST_MIN_SEC, WORK_SPOT_FIRST_MAX_SEC);
 
 /** Whether a tool should show the reading animation (vs typing). Taxonomy comes
  *  from the active HookProvider via the `providerCapabilities` message. */
@@ -79,6 +90,8 @@ export function createCharacter(
     maxContextTokens: DEFAULT_MAX_CONTEXT_TOKENS,
     tasksDone: 0,
     activity: createActivity(),
+    workSpot: null,
+    workTimer: firstWorkDelay(),
   };
 }
 
@@ -88,8 +101,17 @@ export function updateCharacter(
   seats: Map<string, Seat>,
   tileMap: TileTypeVal[][],
   blockedTiles: Set<string>,
+  /** Picks the next spot of a working agent; omitted, agents keep to their seat. */
+  nextWorkSpot?: (ch: Character) => WorkSpot | null,
 ): void {
   ch.frameTimer += dt;
+  // Where the agent belongs right now: its work spot, else its seat
+  const seat = ch.seatId ? seats.get(ch.seatId) : undefined;
+  const home = ch.workSpot
+    ? { col: ch.workSpot.col, row: ch.workSpot.row, dir: ch.workSpot.dir }
+    : seat
+      ? { col: seat.seatCol, row: seat.seatRow, dir: seat.facingDir }
+      : null;
 
   switch (ch.state) {
     case CharacterState.TYPE: {
@@ -97,33 +119,38 @@ export function updateCharacter(
         ch.frameTimer -= TYPE_FRAME_DURATION_SEC;
         ch.frame = (ch.frame + 1) % 2;
       }
-      // A resting agent stays on its spot: its Pokémon sleeps there until the
-      // next turn, so working and resting agents are told apart at a glance.
+      // A resting agent stays where it is: its Pokémon sleeps there until the
+      // next turn. A working one moves from spot to spot to keep busy.
+      if (!ch.isActive || !nextWorkSpot || ch.isSubagent) break;
+      ch.workTimer -= dt;
+      if (ch.workTimer > 0) break;
+      ch.workTimer = randomRange(WORK_SPOT_DWELL_MIN_SEC, WORK_SPOT_DWELL_MAX_SEC);
+      {
+        const spot = nextWorkSpot(ch);
+        if (!spot) break;
+        const path = findPath(ch.tileCol, ch.tileRow, spot.col, spot.row, tileMap, blockedTiles);
+        if (path.length === 0) break;
+        ch.workSpot = spot;
+        ch.path = path;
+        ch.moveProgress = 0;
+        ch.state = CharacterState.WALK;
+        ch.frame = 0;
+        ch.frameTimer = 0;
+      }
       break;
     }
 
     case CharacterState.IDLE: {
       // No idle animation — static pose
       ch.frame = 0;
-      // Working or resting, an agent heads to its spot. Without one it types
-      // in place when working and sleeps where it stands when resting.
-      if (!ch.seatId) {
-        if (ch.isActive) {
-          ch.state = CharacterState.TYPE;
-          ch.frameTimer = 0;
-        }
+      // A resting agent sleeps where it stands; a working one heads home.
+      if (!ch.isActive || !home) {
+        ch.state = CharacterState.TYPE;
+        ch.frameTimer = 0;
         break;
       }
-      const seat = seats.get(ch.seatId);
-      if (seat) {
-        const path = findPath(
-          ch.tileCol,
-          ch.tileRow,
-          seat.seatCol,
-          seat.seatRow,
-          tileMap,
-          blockedTiles,
-        );
+      {
+        const path = findPath(ch.tileCol, ch.tileRow, home.col, home.row, tileMap, blockedTiles);
         if (path.length > 0) {
           ch.path = path;
           ch.moveProgress = 0;
@@ -131,9 +158,9 @@ export function updateCharacter(
           ch.frame = 0;
           ch.frameTimer = 0;
         } else {
-          // Already at seat or no path — settle on it
+          // Already home or no path — settle here
           ch.state = CharacterState.TYPE;
-          ch.dir = seat.facingDir;
+          if (ch.tileCol === home.col && ch.tileRow === home.row) ch.dir = home.dir;
           ch.frame = 0;
           ch.frameTimer = 0;
         }
@@ -154,29 +181,9 @@ export function updateCharacter(
         ch.x = center.x;
         ch.y = center.y;
 
-        if (ch.isActive) {
-          if (!ch.seatId) {
-            // No seat — type in place
-            ch.state = CharacterState.TYPE;
-          } else {
-            const seat = seats.get(ch.seatId);
-            if (seat && ch.tileCol === seat.seatCol && ch.tileRow === seat.seatRow) {
-              ch.state = CharacterState.TYPE;
-              ch.dir = seat.facingDir;
-            } else {
-              ch.state = CharacterState.IDLE;
-            }
-          }
-        } else {
-          // Resting: settle on the spot (IDLE heads there if not on it yet)
-          const seat = ch.seatId ? seats.get(ch.seatId) : undefined;
-          if (seat && ch.tileCol === seat.seatCol && ch.tileRow === seat.seatRow) {
-            ch.state = CharacterState.TYPE;
-            ch.dir = seat.facingDir;
-          } else {
-            ch.state = CharacterState.IDLE;
-          }
-        }
+        // Arrived, or stopped on the way: work or sleep right here
+        ch.state = CharacterState.TYPE;
+        if (home && ch.tileCol === home.col && ch.tileRow === home.row) ch.dir = home.dir;
         ch.frame = 0;
         ch.frameTimer = 0;
         break;
@@ -204,24 +211,21 @@ export function updateCharacter(
         ch.moveProgress = 0;
       }
 
-      // If it became active while walking somewhere else, repath to its seat
-      if (ch.isActive && ch.seatId) {
-        const seat = seats.get(ch.seatId);
-        if (seat) {
-          const lastStep = ch.path[ch.path.length - 1];
-          if (!lastStep || lastStep.col !== seat.seatCol || lastStep.row !== seat.seatRow) {
-            const newPath = findPath(
-              ch.tileCol,
-              ch.tileRow,
-              seat.seatCol,
-              seat.seatRow,
-              tileMap,
-              blockedTiles,
-            );
-            if (newPath.length > 0) {
-              ch.path = newPath;
-              ch.moveProgress = 0;
-            }
+      // If its destination changed while walking, repath there
+      if (ch.isActive && home) {
+        const lastStep = ch.path[ch.path.length - 1];
+        if (!lastStep || lastStep.col !== home.col || lastStep.row !== home.row) {
+          const newPath = findPath(
+            ch.tileCol,
+            ch.tileRow,
+            home.col,
+            home.row,
+            tileMap,
+            blockedTiles,
+          );
+          if (newPath.length > 0) {
+            ch.path = newPath;
+            ch.moveProgress = 0;
           }
         }
       }

@@ -85,6 +85,8 @@ function makeChar(id: number, col: number, row: number): Character {
     maxContextTokens: 200_000,
     tasksDone: 0,
     activity: createActivity(),
+    workSpot: null,
+    workTimer: 0,
   };
 }
 

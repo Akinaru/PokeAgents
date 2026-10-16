@@ -62,7 +62,7 @@ import {
 } from '../../constants.js';
 import type { PokemonEffectKind } from '../../pokemon/effects.js';
 import { pokemonEffect } from '../../pokemon/effects.js';
-import { getPokemonSprite, isPokemonAsleep } from '../../pokemon/sprites.js';
+import { getPokemonSprite, getWildPokemonSprite, isPokemonAsleep } from '../../pokemon/sprites.js';
 import type { TiltCamera } from '../camera.js';
 import { tiltCamera } from '../camera.js';
 import { getColorizedFloorSprite, hasFloorSprites, WALL_COLOR } from '../floorTiles.js';
@@ -544,8 +544,9 @@ export function renderScene(
 
   // ── Pets ──────────────────────────────────────────────
   for (const pet of pets) {
-    const petSprites = getPetSprites(pet.petType);
-    const spriteData = getPetSpriteData(pet, petSprites);
+    const spriteData = pet.pokemon
+      ? getWildPokemonSprite(pet, timeSec)
+      : getPetSpriteData(pet, getPetSprites(pet.petType));
     if (!spriteData) continue;
 
     const cached = getCachedSprite(spriteData, zoom);

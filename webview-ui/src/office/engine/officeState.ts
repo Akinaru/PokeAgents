@@ -13,12 +13,19 @@ import {
   PET_HIT_HALF_WIDTH,
   PET_HIT_HEIGHT,
   WAITING_BUBBLE_DURATION_SEC,
+  WILD_POKEMON_COUNT,
+  WORK_SPOT_MAX_DISTANCE_TILES,
+  WORK_SPOT_MIN_SPACING_TILES,
 } from '../../constants.js';
+import { moveOf } from '../../pokemon/activity.js';
+import { dayKey } from '../../pokemon/daily.js';
+import { rollWildPokemon } from '../../pokemon/roll.js';
 import type { BillboardHit } from '../camera.js';
 import { getAnimationFrames, getCatalogEntry, getOnStateType } from '../layout/furnitureCatalog.js';
 import {
   createDefaultLayout,
   getBlockedTiles,
+  getSeatTiles,
   layoutToFurnitureInstances,
   layoutToSeats,
   layoutToTileMap,
@@ -37,10 +44,12 @@ import type {
   TileType as TileTypeVal,
 } from '../types.js';
 import { CharacterState, Direction, PetState, TILE_SIZE } from '../types.js';
-import { createCharacter, updateCharacter } from './characters.js';
+import { createCharacter, firstWorkDelay, updateCharacter } from './characters.js';
 import { advanceMatrixEffect, startMatrixEffect } from './matrixEffectState.js';
 import { createPet, updatePet } from './petEntity.js';
-import { anchorTile, closestFreeSeat } from './seatPlacement.js';
+import { anchorTile, closestFreeSeat, farthestSeats } from './seatPlacement.js';
+import type { WorkSpot } from './workSpots.js';
+import { buildWorkSpots, pickWorkSpot } from './workSpots.js';
 
 /** Internal helper: facing-tile coords for a seat. Returns null for invalid direction. */
 function seatFacingOffset(direction: Direction): { dCol: number; dRow: number } {
@@ -59,6 +68,10 @@ export class OfficeState {
   walkableTiles: Array<{ col: number; row: number }>;
   characters: Map<number, Character> = new Map();
   pets: Pet[] = [];
+  /** Wild Pokémon roaming the route: runtime only, never saved with the layout. */
+  wildPokemon: Pet[] = [];
+  /** Where working agents go to keep busy (see workSpots.ts). */
+  workSpots: WorkSpot[] = [];
   /** Accumulated time for furniture animation frame cycling */
   furnitureAnimTimer = 0;
   selectedAgentId: number | null = null;
@@ -111,8 +124,10 @@ export class OfficeState {
     this.blockedTiles = getBlockedTiles(this.layout.furniture);
     this.furniture = layoutToFurnitureInstances(this.layout.furniture);
     this.walkableTiles = getWalkableTiles(this.tileMap, this.blockedTiles);
+    this.rebuildWorkSpots();
     // Pets are built last because they need walkableTiles populated for spawn.
     this.rebuildPetsFromLayout(this.layout);
+    this.placeWildPokemon();
   }
 
   /** Rebuild all derived state from a new layout. Reassigns existing characters.
@@ -124,6 +139,7 @@ export class OfficeState {
     this.blockedTiles = getBlockedTiles(layout.furniture);
     this.rebuildFurnitureInstances();
     this.walkableTiles = getWalkableTiles(this.tileMap, this.blockedTiles);
+    this.rebuildWorkSpots();
 
     // Shift character positions when grid expands left/up
     if (shift && (shift.col !== 0 || shift.row !== 0)) {
@@ -231,6 +247,7 @@ export class OfficeState {
 
     // Reconcile pets against the layout roster (handles editor add/remove)
     this.rebuildPetsFromLayout(layout);
+    this.placeWildPokemon();
   }
 
   /** Move a character to a random walkable tile */
@@ -321,14 +338,15 @@ export class OfficeState {
   }
 
   /**
-   * Random-pick a seat from a candidate list, biased toward seats that face an
-   * electronics tile. Returns null when the candidate list is empty.
+   * Random-pick a seat from a candidate list, among those farthest from the
+   * taken seats, biased toward seats that face an electronics tile. Returns
+   * null when the candidate list is empty.
    */
   private pickFromSeats(seatUids: string[], electronicsTiles: Set<string>): string | null {
     if (seatUids.length === 0) return null;
     const pcSeats: string[] = [];
     const otherSeats: string[] = [];
-    for (const uid of seatUids) {
+    for (const uid of farthestSeats(seatUids, this.seats)) {
       const seat = this.seats.get(uid);
       if (!seat) continue;
       if (this.isSeatFacingElectronics(seat, electronicsTiles)) {
@@ -791,6 +809,7 @@ export class OfficeState {
   setAgentActive(id: number, active: boolean): void {
     const ch = this.characters.get(id);
     if (ch) {
+      if (active && !ch.isActive) ch.workTimer = firstWorkDelay();
       ch.isActive = active;
       if (!active) {
         ch.path = [];
@@ -910,6 +929,72 @@ export class OfficeState {
     } else if (ch.bubbleType === 'waiting') {
       // Trigger immediate fade (0.3s remaining)
       ch.bubbleTimer = Math.min(ch.bubbleTimer, DISMISS_BUBBLE_FAST_FADE_SEC);
+    }
+  }
+
+  // ── Work spots ────────────────────────────────────────────────
+
+  private rebuildWorkSpots(): void {
+    this.workSpots = buildWorkSpots(
+      this.layout.furniture,
+      (type) => {
+        const entry = getCatalogEntry(type);
+        return entry
+          ? { w: entry.footprintW, h: entry.footprintH, bgRows: entry.backgroundTiles || 0 }
+          : undefined;
+      },
+      (col, row) => isWalkable(col, row, this.tileMap, this.blockedTiles),
+      getSeatTiles(this.seats),
+    );
+  }
+
+  /** Next spot for a working agent, away from every other agent. */
+  private nextWorkSpot = (ch: Character): WorkSpot | null => {
+    const others: Array<{ col: number; row: number }> = [];
+    for (const other of this.characters.values()) {
+      if (other === ch || other.isSubagent) continue;
+      others.push({ col: other.tileCol, row: other.tileRow });
+      if (other.workSpot) others.push(other.workSpot);
+    }
+    return pickWorkSpot(
+      this.workSpots,
+      ch.tileCol,
+      ch.tileRow,
+      moveOf(ch.currentTool),
+      others,
+      WORK_SPOT_MIN_SPACING_TILES,
+      WORK_SPOT_MAX_DISTANCE_TILES,
+    );
+  };
+
+  // ── Wild Pokémon ──────────────────────────────────────────────
+
+  /** Spawn today's wild Pokémon once, and move any left on a blocked tile. */
+  private placeWildPokemon(): void {
+    if (this.walkableTiles.length === 0) return;
+    const randomTile = () =>
+      this.walkableTiles[Math.floor(Math.random() * this.walkableTiles.length)];
+    if (this.wildPokemon.length === 0) {
+      this.wildPokemon = rollWildPokemon(dayKey(new Date()), WILD_POKEMON_COUNT).map((form, i) => {
+        const tile = randomTile();
+        const pet = createPet(`wild-${i}`, -1, tile.col, tile.row);
+        pet.name = form.name;
+        pet.pokemon = form;
+        return pet;
+      });
+      return;
+    }
+    for (const pet of this.wildPokemon) {
+      if (isWalkable(pet.tileCol, pet.tileRow, this.tileMap, this.blockedTiles)) continue;
+      const tile = randomTile();
+      pet.tileCol = tile.col;
+      pet.tileRow = tile.row;
+      pet.x = tile.col * TILE_SIZE + TILE_SIZE / 2;
+      pet.y = tile.row * TILE_SIZE + TILE_SIZE / 2;
+      pet.path = [];
+      pet.moveProgress = 0;
+      pet.state = PetState.IDLE;
+      pet.followTargetId = null;
     }
   }
 
@@ -1109,7 +1194,7 @@ export class OfficeState {
 
       // Temporarily unblock own seat so character can pathfind to it
       this.withOwnSeatUnblocked(ch, () =>
-        updateCharacter(ch, dt, this.seats, this.tileMap, this.blockedTiles),
+        updateCharacter(ch, dt, this.seats, this.tileMap, this.blockedTiles, this.nextWorkSpot),
       );
 
       // Tick bubble timer for waiting bubbles
@@ -1124,6 +1209,10 @@ export class OfficeState {
     // Remove characters that finished despawn
     for (const id of toDelete) {
       this.characters.delete(id);
+    }
+
+    for (const pet of this.wildPokemon) {
+      updatePet(pet, dt, this.walkableTiles, this.characters, this.tileMap, this.blockedTiles);
     }
 
     // ── Pet FSM ────────────────────────────────────────────────

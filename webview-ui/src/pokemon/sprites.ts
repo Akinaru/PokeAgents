@@ -17,8 +17,8 @@ import {
   POKEMON_TICKS_PER_SEC,
 } from '../constants.js';
 import { isReadingTool } from '../office/engine/characters.js';
-import type { Character, SpriteData } from '../office/types.js';
-import { CharacterState, Direction } from '../office/types.js';
+import type { Character, Pet, SpriteData } from '../office/types.js';
+import { CharacterState, Direction, PetState } from '../office/types.js';
 import { transport } from '../transport/index.js';
 import { dailySeed } from './daily.js';
 import { startPokemonEffect } from './effects.js';
@@ -248,7 +248,12 @@ export function characterPokemon(ch: Character): PokemonForm | null {
  *  sprite (no seed, sheets still loading, or download failed). */
 export function getPokemonSprite(ch: Character, timeSec: number): SpriteData | null {
   const form = characterPokemon(ch);
-  if (!form) return null;
+  const anims = form && formAnims(form);
+  return anims ? pokemonFrame(ch, anims, timeSec) : null;
+}
+
+/** A form's decoded sheets, requested from the server on first use. */
+function formAnims(form: PokemonForm): Record<PokemonAnim, Sheet> | null {
   const key = formKey(form.dex, form.shiny);
   const entry = entries.get(key);
   if (!entry) {
@@ -256,6 +261,30 @@ export function getPokemonSprite(ch: Character, timeSec: number): SpriteData | n
     transport.send({ type: 'requestPokemonSprites', dex: form.dex, shiny: form.shiny });
     return null;
   }
-  if (entry.status !== 'ready') return null;
-  return pokemonFrame(ch, entry.anims, timeSec);
+  return entry.status === 'ready' ? entry.anims : null;
+}
+
+/** Per wild Pokémon: when its next Idle cycle plays. */
+const wildIdle = new WeakMap<Pet, { startSec: number; nextSec: number }>();
+
+/** Frame of a wild Pokémon (a Pet with `pokemon` set), or null while loading. */
+export function getWildPokemonSprite(pet: Pet, timeSec: number): SpriteData | null {
+  const anims = pet.pokemon && formAnims(pet.pokemon);
+  if (!anims) return null;
+  if (pet.state !== PetState.IDLE) {
+    const walk = anims.Walk;
+    return sheetFrame(walk, pet.dir, Math.floor(timeSec * POKEMON_TICKS_PER_SEC) % walk.totalTicks);
+  }
+  // Same pacing as agents: rest pose, with its Idle cycle now and then
+  let idle = wildIdle.get(pet);
+  if (!idle) {
+    idle = { startSec: -Infinity, nextSec: timeSec + randomIdleDelay() };
+    wildIdle.set(pet, idle);
+  }
+  if (timeSec >= idle.nextSec) {
+    idle.startSec = timeSec;
+    idle.nextSec = timeSec + randomIdleDelay();
+  }
+  const ticks = (timeSec - idle.startSec) * POKEMON_TICKS_PER_SEC;
+  return sheetFrame(anims.Idle, pet.dir, ticks < anims.Idle.totalTicks ? ticks : 0);
 }

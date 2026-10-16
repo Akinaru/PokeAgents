@@ -146,6 +146,8 @@ export interface AreaDefinition {
 }
 
 import type { AgentActivity } from '../pokemon/activity.js';
+import type { PokemonForm } from '../pokemon/roll.js';
+import type { WorkSpot } from './engine/workSpots.js';
 
 export interface OfficeLayout {
   version: 1;
@@ -256,6 +258,10 @@ export interface Character {
   tasksDone: number;
   /** Tool use and journal for the Summary screen (see pokemon/activity.ts). */
   activity: AgentActivity;
+  /** Spot a working agent is at or heading to (see engine/workSpots.ts). */
+  workSpot: WorkSpot | null;
+  /** Seconds until a working agent moves on to another spot. */
+  workTimer: number;
 }
 
 export const PetState = { IDLE: 'idle', WALK: 'walk', FOLLOW: 'follow' } as const;
@@ -298,6 +304,8 @@ export interface Pet {
   bubbleType: 'heart' | null;
   /** Countdown timer for the heart bubble (mirrors character waiting bubble). */
   bubbleTimer: number;
+  /** Set on wild Pokémon, which roam with the pet AI but draw a Pokémon sprite. */
+  pokemon?: PokemonForm;
 }
 
 /** Persisted record (lives on OfficeLayout). */

@@ -4,6 +4,10 @@ import {
   CHARACTER_SITTING_OFFSET_PX,
   HUD_BELOW_GAP_PX,
   HUD_FLIP_BELOW_PX,
+  NAMETAG_CHAR_WIDTH_PX,
+  NAMETAG_CHROME_WIDTH_PX,
+  NAMETAG_HEIGHT_PX,
+  NAMETAG_MAX_WIDTH_PX,
   NAMETAG_OFFSET_Y_PX,
   TEAM_LEAD_COLOR,
   TEAM_ROLE_COLOR,
@@ -22,7 +26,40 @@ import { getActivityText, WAITING_INPUT_ACTIVITY_TEXT } from '../agentActivityTe
 import type { OfficeState } from '../engine/officeState.js';
 import { overlayProjection } from '../projection.js';
 import type { ToolActivity } from '../types.js';
+import type { Character } from '../types.js';
 import { CharacterState } from '../types.js';
+
+interface Nametag {
+  id: number;
+  ch: Character;
+  x: number;
+  y: number;
+}
+
+/** Push overlapping nametags down, top to bottom, so every name stays readable. */
+function layoutNametags(tags: Nametag[]): Nametag[] {
+  const width = (t: Nametag): number =>
+    Math.min(
+      NAMETAG_MAX_WIDTH_PX,
+      (t.ch.folderName?.length ?? 0) * NAMETAG_CHAR_WIDTH_PX + NAMETAG_CHROME_WIDTH_PX,
+    );
+  const placed: Nametag[] = [];
+  for (const tag of [...tags].sort((a, b) => a.y - b.y)) {
+    let y = tag.y;
+    for (let moved = true; moved;) {
+      moved = false;
+      for (const other of placed) {
+        const overlapX = Math.abs(other.x - tag.x) < (width(other) + width(tag)) / 2;
+        if (overlapX && Math.abs(other.y - y) < NAMETAG_HEIGHT_PX) {
+          y = other.y + NAMETAG_HEIGHT_PX;
+          moved = true;
+        }
+      }
+    }
+    placed.push({ ...tag, y });
+  }
+  return placed;
+}
 
 interface ToolOverlayProps {
   officeState: OfficeState;
@@ -77,32 +114,39 @@ export function ToolOverlay({
   const selectedId = officeState.selectedAgentId;
   const hoveredId = officeState.hoveredAgentId;
 
+  const nametags = layoutNametags(
+    agents.flatMap((id) => {
+      const ch = officeState.characters.get(id);
+      if (!ch?.folderName || ch.isSubagent) return [];
+      const at = project.toScreen(ch.x, ch.y, -NAMETAG_OFFSET_Y_PX);
+      return [{ id, ch, x: project.toScreen(ch.x, ch.y).x, y: at.y }];
+    }),
+  );
+
   // All character IDs
   const allIds = [...agents, ...subagentCharacters.map((s) => s.id)];
 
   return (
     <>
-      {/* Always-visible nametag under each agent: its full project folder name */}
-      {agents.map((id) => {
-        const ch = officeState.characters.get(id);
-        if (!ch?.folderName || ch.isSubagent) return null;
-        return (
-          <div
-            key={`tag-${id}`}
-            className="absolute -translate-x-1/2 bw bw-nametag"
-            style={{
-              left: project.toScreen(ch.x, ch.y).x,
-              top: project.toScreen(ch.x, ch.y, -NAMETAG_OFFSET_Y_PX).y,
-              pointerEvents: 'none',
-              zIndex: 40,
-            }}
-            data-testid="agent-nametag"
-          >
-            <span className="bw-dot" style={{ ['--dot' as string]: STATUS_DOT[agentStatus(ch)] }} />
-            {ch.folderName}
-          </div>
-        );
-      })}
+      {/* Always-visible nametag under each agent: its project folder name */}
+      {nametags.map(({ id, ch, x, y }) => (
+        <div
+          key={`tag-${id}`}
+          className="absolute -translate-x-1/2 bw bw-nametag"
+          style={{
+            left: x,
+            top: y,
+            maxWidth: NAMETAG_MAX_WIDTH_PX,
+            pointerEvents: 'none',
+            zIndex: 40,
+          }}
+          title={ch.folderName}
+          data-testid="agent-nametag"
+        >
+          <span className="bw-dot" style={{ ['--dot' as string]: STATUS_DOT[agentStatus(ch)] }} />
+          <span className="overflow-hidden text-ellipsis">{ch.folderName}</span>
+        </div>
+      ))}
       {allIds.map((id) => {
         const ch = officeState.characters.get(id);
         if (!ch) return null;
