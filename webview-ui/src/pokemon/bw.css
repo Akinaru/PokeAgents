@@ -56,7 +56,8 @@
 
 .bw {
   font-family: var(--bw-font);
-  font-weight: 500;
+  /* Pixelify Sans' regular is too thin to read at UI sizes */
+  font-weight: 600;
   letter-spacing: 0.01em;
   -webkit-font-smoothing: antialiased;
 }
@@ -229,20 +230,20 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  height: 14px;
+  height: 17px;
   padding: 2px 3px;
   border-radius: 4px;
   background: #404048;
 }
 .bw-hp-label {
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
   line-height: 1;
   color: #f8d860;
 }
 .bw-hp-track {
   flex: 1;
-  height: 8px;
+  height: 10px;
   background: #202028;
 }
 .bw-hp-fill {
@@ -262,7 +263,7 @@
   --bottom: var(--bw-hp-low);
 }
 .bw-exp {
-  height: 6px;
+  height: 8px;
   padding: 1px;
   background: #202028;
 }
@@ -274,10 +275,10 @@
 /* ── Status badges (ACT / SOM / ATT / FINI) ── */
 .bw-badge {
   display: inline-block;
-  min-width: 40px;
-  padding: 1px 5px 2px;
+  min-width: 48px;
+  padding: 1px 6px 2px;
   border-radius: 4px;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 700;
   line-height: 1.1;
   text-align: center;
@@ -422,15 +423,15 @@
   padding: 1px 7px 2px 5px;
   border: 1px solid rgba(255, 255, 255, 0.35);
   border-radius: 6px;
-  background: rgba(20, 28, 36, 0.84);
-  font-size: 14px;
+  background: rgba(20, 28, 36, 0.86);
+  font-size: 16px;
   line-height: 1.2;
   color: #fff;
   white-space: nowrap;
 }
 .bw-dot {
-  width: 8px;
-  height: 8px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
   background: var(--dot);
 }

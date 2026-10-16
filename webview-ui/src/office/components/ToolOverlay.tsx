@@ -239,8 +239,8 @@ export function ToolOverlay({
             data-testid="agent-overlay"
             data-agent-id={id}
           >
-            <div className="bw-hud" style={{ minWidth: 250, maxWidth: 340 }}>
-              <div className="bw-hud-row bw-text-dark" style={{ fontSize: 20, fontWeight: 600 }}>
+            <div className="bw-hud" style={{ minWidth: 300, maxWidth: 400 }}>
+              <div className="bw-hud-row bw-text-dark" style={{ fontSize: 24, fontWeight: 700 }}>
                 <span className="overflow-hidden text-ellipsis">
                   {(pokemon?.name ?? (isSub ? 'Sous-agent' : 'Agent')).toUpperCase()}
                 </span>
@@ -250,7 +250,7 @@ export function ToolOverlay({
                   </span>
                 )}
                 {pokemon?.shiny && <span className="bw-star">★</span>}
-                <span className="ml-auto" style={{ fontSize: 17 }}>
+                <span className="ml-auto" style={{ fontSize: 20 }}>
                   N.{agentLevel(ch)}
                 </span>
               </div>
@@ -258,7 +258,7 @@ export function ToolOverlay({
                 <span className={`bw-badge ${status}`}>{STATUS_LABEL[status]}</span>
                 <span
                   className="bw-text-dark overflow-hidden text-ellipsis"
-                  style={{ fontSize: 16, fontStyle: isSub ? 'italic' : undefined }}
+                  style={{ fontSize: 18, fontStyle: isSub ? 'italic' : undefined }}
                 >
                   {activityText}
                 </span>
@@ -279,8 +279,8 @@ export function ToolOverlay({
                       />
                     </div>
                   </div>
-                  <div className="bw-hud-row bw-text-dark" style={{ fontSize: 14, marginTop: 1 }}>
-                    <span style={{ fontSize: 12 }}>EXP</span>
+                  <div className="bw-hud-row bw-text-dark" style={{ fontSize: 16, marginTop: 2 }}>
+                    <span style={{ fontSize: 14 }}>EXP</span>
                     <div className="bw-exp" style={{ flex: 1 }}>
                       <div style={{ width: `${vitals.exp * 100}%` }} />
                     </div>
@@ -288,7 +288,7 @@ export function ToolOverlay({
                   </div>
                 </div>
               )}
-              <div className="bw-hud-row bw-meta" style={{ fontSize: 14, marginTop: 3 }}>
+              <div className="bw-hud-row bw-meta" style={{ fontSize: 16, marginTop: 4 }}>
                 {ch.folderName && (
                   <span className="overflow-hidden text-ellipsis">{ch.folderName}</span>
                 )}
@@ -300,7 +300,7 @@ export function ToolOverlay({
                 {isSelected && !isSub && (
                   <button
                     className="ml-auto bw-text-dark"
-                    style={{ fontSize: 18, lineHeight: 1, cursor: 'pointer' }}
+                    style={{ fontSize: 22, lineHeight: 1, cursor: 'pointer' }}
                     onClick={(e) => {
                       e.stopPropagation();
                       onCloseAgent(id);
