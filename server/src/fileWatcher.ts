@@ -1085,8 +1085,7 @@ export function adoptExternalSessionFromHook(
     knownJsonlFiles.add(transcriptPath);
     const projectDir = path.dirname(transcriptPath);
     const folderName =
-      folderNameResolver?.({ cwd, projectDir }) ??
-      folderNameFromProjectDir(path.basename(projectDir));
+      folderNameResolver?.({ cwd, projectDir }) ?? (cwd ? path.basename(cwd) : undefined);
 
     adoptExternalSession(
       transcriptPath,
@@ -1220,7 +1219,7 @@ function adoptExternalSession(
     lastDataAt: Date.now(),
     linesProcessed: 0,
     seenUnknownRecordTypes: new Set(),
-    folderName,
+    folderName: folderName ?? folderNameFromTranscript(jsonlFile, projectDir),
     contextTokens: 0,
     maxContextTokens: DEFAULT_MAX_CONTEXT_TOKENS,
   };
@@ -1465,8 +1464,27 @@ export function scanExternalDir(
   }
 }
 
-/** Derive a readable folder name from the Claude project dir hash. */
-function folderNameFromProjectDir(dirName: string): string {
+/** Bytes scanned at the head of a transcript when looking for its `cwd`. */
+const TRANSCRIPT_CWD_SCAN_BYTES = 65536;
+
+/**
+ * Full folder name of the session's working directory, read from the first
+ * transcript record carrying `cwd`. The Claude project dir hash replaces every
+ * separator with `-`, so it cannot be decoded back reliably (`my-app` → `app`);
+ * it is only the fallback when the transcript has no `cwd` yet.
+ */
+function folderNameFromTranscript(jsonlFile: string, projectDir: string): string {
+  try {
+    const buf = Buffer.alloc(TRANSCRIPT_CWD_SCAN_BYTES);
+    const fd = fs.openSync(jsonlFile, 'r');
+    const bytesRead = fs.readSync(fd, buf, 0, buf.length, 0);
+    fs.closeSync(fd);
+    const match = /"cwd":("(?:[^"\\]|\\.)*")/.exec(buf.toString('utf-8', 0, bytesRead));
+    if (match) return path.basename(JSON.parse(match[1]) as string);
+  } catch {
+    // Unreadable or not yet written: fall back to the hash.
+  }
+  const dirName = path.basename(projectDir);
   const parts = dirName.replace(/^-+/, '').split('-');
   return parts[parts.length - 1] || dirName;
 }
@@ -1534,8 +1552,7 @@ function scanGlobalProjectDirs(
       }
 
       const folderName =
-        folderNameResolver?.({ projectDir: dirPath }) ??
-        folderNameFromProjectDir(path.basename(dirPath));
+        folderNameResolver?.({ projectDir: dirPath }) ?? folderNameFromTranscript(file, dirPath);
       knownJsonlFiles.add(file);
       console.log(
         `[aAgent] Watcher: detected global session ${path.basename(file)} (${folderName})`,

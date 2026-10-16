@@ -221,7 +221,7 @@ export interface Character {
   matrixEffectTimer: number;
   /** Per-column random seeds (16 values) for staggered rain timing */
   matrixEffectSeeds: number[];
-  /** Workspace folder name (only set for multi-root workspaces) */
+  /** Name of the folder the agent works in (WorkspaceFolder.name, else cwd basename) */
   folderName?: string;
   /** Headless agent: adopted from outside the office, so there is no terminal to
    *  focus. Rendered translucent. Teammates and sub-agents are never headless —

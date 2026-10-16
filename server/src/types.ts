@@ -20,7 +20,7 @@ export interface AgentState {
   isWaiting: boolean;
   permissionSent: boolean;
   hadToolsInTurn: boolean;
-  /** Workspace folder name (only set for multi-root workspaces) */
+  /** Name of the folder the agent works in (WorkspaceFolder.name, else cwd basename) */
   folderName?: string;
   /** Timestamp of last JSONL data received (ms since epoch) */
   lastDataAt: number;
@@ -96,7 +96,7 @@ export interface PersistedAgent {
   isExternal?: boolean;
   jsonlFile: string;
   projectDir: string;
-  /** Workspace folder name (only set for multi-root workspaces) */
+  /** Name of the folder the agent works in (WorkspaceFolder.name, else cwd basename) */
   folderName?: string;
 
   // -- Agent Teams --
