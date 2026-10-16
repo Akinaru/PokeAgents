@@ -208,11 +208,15 @@ function tallGrassFloor(): Canvas {
   return c;
 }
 
-// ── Furniture (full color) ──────────────────────────────────
+// ── Furniture (full color, 5th-gen palette) ─────────────────
 
-const OUTLINE = hex('#203820');
-const LEAVES = [hex('#2c6a34'), hex('#3c8a3c'), hex('#58a848'), hex('#88d060')];
-const SHADOW = hex('#000000', 60);
+const SHADOW = hex('#285830', 70);
+
+/** Teal tree canopy, as on the 5th-gen routes: darkest → highlight. */
+const TREE_TEAL = [hex('#0c3c34'), hex('#185848'), hex('#207058'), hex('#2a8868'), hex('#40a880')];
+/** Tall-grass / hedge greens: darkest → highlight. */
+const HEDGE = [hex('#204c28'), hex('#285830'), hex('#387030'), hex('#489840'), hex('#68b858')];
+const BARK = [hex('#4a2c18'), hex('#6a4028'), hex('#8a5838'), hex('#a87048')];
 
 /** Draw an outlined object over a soft ground shadow (the shadow stays un-outlined). */
 function withShadow(
@@ -231,127 +235,142 @@ function withShadow(
   return c;
 }
 
-/** Round canopy shaded by distance to a top-left light source. */
-function canopy(
-  c: Canvas,
-  blobs: Array<[number, number, number]>,
-  light: [number, number],
-  palette: RGBA[],
-): void {
-  const r = rng(blobs.length * 31 + light[0]);
-  for (const [cx, cy, rad] of blobs) {
-    for (let y = Math.floor(cy - rad); y <= cy + rad; y++) {
-      for (let x = Math.floor(cx - rad); x <= cx + rad; x++) {
-        const dx = x + 0.5 - cx;
-        const dy = y + 0.5 - cy;
-        if (dx * dx + dy * dy > rad * rad) continue;
-        // Light falls on each blob from the top-left; jitter gives a leafy edge.
-        const lx = x - (cx - rad * 0.35 + (light[0] - 16) * 0.1);
-        const ly = y - (cy - rad * 0.4 + (light[1] - 16) * 0.1);
-        const d = Math.sqrt(lx * lx + ly * ly) / rad + (r() - 0.5) * 0.18;
-        const idx = d < 0.35 ? 3 : d < 0.7 ? 2 : d < 1.05 ? 1 : 0;
-        c.set(x, y, palette[idx]);
-      }
+/**
+ * One leaf "scale": a small dome lit from the top-left with a dark lower rim.
+ * Overlapping rows of scales, drawn top to bottom, give the tiered 5th-gen
+ * foliage look. `shades` runs darkest → highlight.
+ */
+function scale(c: Canvas, cx: number, cy: number, r: number, shades: RGBA[]): void {
+  for (let y = Math.floor(cy - r); y <= cy + r; y++) {
+    for (let x = Math.floor(cx - r - 1); x <= cx + r + 1; x++) {
+      const dx = (x + 0.5 - cx) / (r + 1);
+      const dy = (y + 0.5 - cy) / r;
+      const d2 = dx * dx + dy * dy;
+      if (d2 > 1) continue;
+      let idx: number;
+      if (dy > 0.55 || d2 > 0.82)
+        idx = 1; // lower rim
+      else if (dx + dy < -0.55)
+        idx = 4; // highlight
+      else if (dx + dy < -0.05) idx = 3;
+      else idx = 2;
+      c.set(x, y, shades[idx]);
     }
   }
+  // Dark crease under the scale
+  for (let x = Math.ceil(cx - r); x <= cx + r; x++) c.set(x, cy + r, shades[0]);
 }
 
 function tree(): Canvas {
-  return withShadow(32, 48, [16, 44, 12, 3.5], OUTLINE, (c) => {
-    canopy(
-      c,
-      [
-        [16, 13, 10],
-        [8, 22, 8],
-        [24, 22, 8],
-        [16, 26, 9],
-        [11, 13, 6],
-        [21, 12, 6],
-      ],
-      [10, 8],
-      LEAVES,
-    );
-    // Trunk, drawn after the canopy so it shows below it
-    c.rect(13, 34, 6, 10, hex('#8a5a30'));
-    c.rect(17, 34, 2, 10, hex('#6a4020'));
-    c.rect(13, 34, 1, 10, hex('#a87040'));
-    c.rect(12, 42, 8, 2, hex('#6a4020'));
+  return withShadow(32, 48, [16, 43, 14, 4], TREE_TEAL[0], (c) => {
+    // Trunk with root flare (drawn first; the canopy covers its top)
+    c.rect(13, 30, 6, 12, BARK[2]);
+    c.rect(17, 30, 2, 12, BARK[1]);
+    c.rect(13, 30, 1, 12, BARK[3]);
+    c.rect(10, 40, 12, 2, BARK[1]);
+    c.set(9, 41, BARK[1]);
+    c.set(22, 41, BARK[1]);
+    c.rect(12, 40, 3, 1, BARK[2]);
+    // Canopy: rows of scales, widest in the middle
+    const rows: Array<[cy: number, xs: number[]]> = [
+      [5, [12, 20]],
+      [10, [8, 16, 24]],
+      [15, [5, 12, 20, 27]],
+      [20, [4, 11, 18, 25, 28]],
+      [25, [6, 13, 20, 26]],
+      [29, [10, 17, 23]],
+    ];
+    for (const [cy, xs] of rows) for (const cx of xs) scale(c, cx, cy, 4, TREE_TEAL);
   });
 }
 
 function bush(): Canvas {
-  return withShadow(16, 16, [8, 14, 7, 2], OUTLINE, (c) =>
-    canopy(
-      c,
-      [
-        [8, 9, 6],
-        [4.5, 10.5, 4],
-        [11.5, 10.5, 4],
-      ],
-      [5, 5],
-      LEAVES,
-    ),
-  );
+  return withShadow(16, 16, [8, 14, 7, 2], HEDGE[0], (c) => {
+    for (const [cx, cy] of [
+      [8, 5],
+      [5, 8],
+      [11, 8],
+      [8, 10],
+    ]) {
+      scale(c, cx, cy, 3, HEDGE);
+    }
+  });
+}
+
+/** One tall-grass clump: three pointed leaves (left, right, top) over a dark base. */
+function grassClump(c: Canvas, cx: number, cy: number): void {
+  c.ellipse(cx, cy + 2, 4.5, 2, HEDGE[0]);
+  const leaf = (lx: number, ly: number, rx: number, ry: number, body: RGBA): void => {
+    c.ellipse(lx, ly, rx, ry, body);
+    c.set(lx - 1, ly - ry + 1, HEDGE[4]); // sunlit tip
+    c.set(lx, ly + ry - 1, HEDGE[1]); // shaded base
+  };
+  leaf(cx - 2.5, cy, 2.2, 3.2, HEDGE[2]);
+  leaf(cx + 2.5, cy, 2.2, 3.2, HEDGE[2]);
+  leaf(cx, cy - 1.5, 2, 3.5, HEDGE[3]);
+}
+
+/** A pair of white 5th-gen flowers (petals around a yellow heart). */
+function flower(c: Canvas, x: number, y: number): void {
+  const petal = hex('#f8f8e8');
+  const shade = hex('#d0d0c0');
+  c.rect(x - 1, y - 2, 3, 1, petal);
+  c.rect(x - 2, y - 1, 5, 3, petal);
+  c.rect(x - 1, y + 2, 3, 1, shade);
+  c.set(x + 2, y + 1, shade);
+  c.set(x, y, hex('#f8c850'));
+  c.set(x + 1, y, hex('#e8a838'));
 }
 
 function flowers(): Canvas {
   const c = new Canvas(16, 16);
-  const flower = (x: number, y: number, petal: RGBA, petalShade: RGBA): void => {
-    c.set(x, y + 2, hex('#3c7a30'));
-    c.set(x, y + 3, hex('#3c7a30'));
-    c.set(x - 1, y, petal);
-    c.set(x + 1, y, petal);
-    c.set(x, y - 1, petal);
-    c.set(x, y + 1, petalShade);
-    c.set(x, y, hex('#f8d030'));
-  };
-  flower(3, 4, hex('#f85858'), hex('#c03838'));
-  flower(11, 3, hex('#f8f8f8'), hex('#c8c8d8'));
-  flower(7, 10, hex('#f8f8f8'), hex('#c8c8d8'));
-  flower(13, 11, hex('#f85858'), hex('#c03838'));
-  flower(2, 12, hex('#f8a8d0'), hex('#d078a0'));
+  flower(c, 5, 5);
+  flower(c, 10, 10);
   return c;
 }
 
 function sign(): Canvas {
-  return withShadow(16, 32, [8, 30, 6, 1.5], hex('#3a2010'), (c) => {
-    // Posts
-    c.rect(3, 18, 2, 12, hex('#6a4020'));
-    c.rect(11, 18, 2, 12, hex('#6a4020'));
-    // Board
-    c.rect(1, 12, 14, 9, hex('#a87040'));
-    c.rect(1, 12, 14, 2, hex('#c89058'));
-    c.rect(1, 19, 14, 2, hex('#8a5a30'));
-    // Lettering hint
-    c.rect(4, 15, 8, 1, hex('#6a4020'));
-    c.rect(4, 17, 5, 1, hex('#6a4020'));
+  return withShadow(16, 32, [8, 30, 7, 2], hex('#585850'), (c) => {
+    const light = hex('#e8e8e0');
+    const mid = hex('#c0c0b8');
+    const dark = hex('#909088');
+    // Legs
+    c.rect(2, 20, 2, 9, dark);
+    c.rect(12, 20, 2, 9, dark);
+    // Board with a bevelled frame and a recessed panel
+    c.rect(0, 11, 16, 11, mid);
+    c.rect(0, 11, 16, 2, light);
+    c.rect(0, 20, 16, 2, dark);
+    c.rect(2, 14, 12, 5, hex('#a8a8a0'));
+    c.rect(3, 15, 6, 1, hex('#787870'));
+    c.rect(3, 17, 9, 1, hex('#787870'));
   });
 }
 
 function stump(): Canvas {
-  return withShadow(16, 16, [8, 13, 7, 2.5], hex('#3a2010'), (c) => {
-    c.rect(3, 7, 10, 6, hex('#8a5a30'));
-    c.rect(10, 7, 3, 6, hex('#6a4020'));
-    c.rect(3, 7, 1, 6, hex('#a87040'));
-    c.ellipse(8, 7, 5, 2.5, hex('#d8b070'));
-    c.ellipse(8, 7, 3, 1.5, hex('#c09050'));
-    c.set(8, 7, hex('#a87040'));
+  return withShadow(16, 16, [8, 13, 7, 2.5], BARK[0], (c) => {
+    c.rect(3, 7, 10, 6, BARK[2]);
+    c.rect(10, 7, 3, 6, BARK[1]);
+    c.rect(3, 7, 1, 6, BARK[3]);
+    c.ellipse(8, 7, 5, 2.5, hex('#e0c088'));
+    c.ellipse(8, 7, 3, 1.5, hex('#c8a068'));
+    c.set(8, 7, BARK[3]);
   });
 }
 
 function rock(): Canvas {
-  return withShadow(16, 16, [8, 13, 7, 2.5], hex('#383840'), (c) => {
-    c.ellipse(8, 9, 6, 5, hex('#8890a0'));
-    c.ellipse(7, 8, 4, 3.5, hex('#a8b0c0'));
-    c.ellipse(6, 7, 2, 1.5, hex('#c8d0d8'));
-    c.rect(9, 11, 4, 2, hex('#687080'));
+  return withShadow(16, 16, [8, 13, 7, 2.5], hex('#505860'), (c) => {
+    c.ellipse(8, 9, 6, 5, hex('#98a0a8'));
+    c.ellipse(7, 8, 4, 3.5, hex('#b8c0c8'));
+    c.ellipse(6, 7, 2, 1.5, hex('#d8e0e8'));
+    c.rect(9, 11, 4, 2, hex('#788088'));
   });
 }
 
 function fence(): Canvas {
-  return withShadow(16, 16, [8, 15, 8, 1], hex('#585040'), (c) => {
-    const wood = hex('#e8e0d0');
-    const shade = hex('#b0a890');
+  return withShadow(16, 16, [8, 15, 8, 1], hex('#787060'), (c) => {
+    const wood = hex('#f0e8d8');
+    const shade = hex('#c0b8a0');
     for (const px of [1, 12]) {
       c.rect(px, 3, 3, 11, wood);
       c.rect(px + 2, 3, 1, 11, shade);
@@ -361,6 +380,193 @@ function fence(): Canvas {
     c.rect(0, 7, 16, 1, shade);
     c.rect(0, 12, 16, 1, shade);
   });
+}
+
+// ── Painted map background (5th-gen route look) ─────────────
+
+const GRASS_SHADES = ['#88d880', '#90d888', '#98e088', '#a0e888', '#a8e890', '#b0f090'].map((h) =>
+  hex(h),
+);
+const SAND_SHADES = ['#d8c890', '#e0c898', '#e0d098', '#e0d8a0', '#e8e0b0'].map((h) => hex(h));
+const PATH_RIM = hex('#c8b898');
+const PATH_EDGE = hex('#a8a898');
+const GRASS_SHADOW = hex('#80d078');
+const TERRACE_LINE = hex('#70b060');
+const TERRACE_LIGHT = hex('#c0f8a0');
+
+/** 4×4 Bayer matrix, for the soft ordered dithering of the 5th-gen games. */
+const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map((v) => v / 16 - 0.5);
+
+/** Deterministic -1/0/1 jitter (worn path borders, irregular grass clumps). */
+const jitter = (i: number, salt: number): number =>
+  ((Math.imul(i + salt, 2654435761) >>> 29) % 3) - 1;
+
+/** Smooth 2D value noise in [0, 1]. */
+function valueNoise(seed: number): (x: number, y: number) => number {
+  const hash = (ix: number, iy: number): number => {
+    let h = Math.imul(ix, 374761393) ^ Math.imul(iy, 668265263) ^ seed;
+    h = Math.imul(h ^ (h >>> 13), 1274126177);
+    return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+  };
+  const smooth = (t: number): number => t * t * (3 - 2 * t);
+  return (x, y) => {
+    const ix = Math.floor(x);
+    const iy = Math.floor(y);
+    const fx = smooth(x - ix);
+    const fy = smooth(y - iy);
+    const top = hash(ix, iy) * (1 - fx) + hash(ix + 1, iy) * fx;
+    const bottom = hash(ix, iy + 1) * (1 - fx) + hash(ix + 1, iy + 1) * fx;
+    return top * (1 - fy) + bottom * fy;
+  };
+}
+
+/** Pick a shade for value v in [0, 1], dithered at pixel (x, y). */
+function dithered(shades: RGBA[], v: number, x: number, y: number): RGBA {
+  const t = v * (shades.length - 1) + BAYER[(y % 4) * 4 + (x % 4)] * 0.9;
+  return shades[Math.max(0, Math.min(shades.length - 1, Math.round(t)))];
+}
+
+interface RouteShapes {
+  /** Signed distance (px) into the path: > 0 inside. */
+  pathDepth(x: number, y: number): number;
+  tallGrass: Array<[col: number, row: number, cols: number, rows: number]>;
+  terraces: Array<[col: number, row: number, cols: number, rows: number]>;
+}
+
+function paintRoute(cols: number, rows: number, shapes: RouteShapes): Canvas {
+  const w = cols * 16;
+  const h = rows * 16;
+  const c = new Canvas(w, h);
+  const broad = valueNoise(3);
+  const fine = valueNoise(5);
+  const inTerrace = (x: number, y: number): boolean =>
+    shapes.terraces.some(
+      ([tc, tr, tw, th]) =>
+        x >= tc * 16 && x < (tc + tw) * 16 && y >= tr * 16 && y < (tr + th) * 16,
+    );
+
+  // Grass: long diagonal sheen bands broken up by noise, ordered-dithered
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      // u runs along the diagonal sheen, v across it: noise stretched along u
+      // reads as long brush strokes, like the 5th-gen grass.
+      const u = (x + y * 0.6) / 1.17;
+      const v0 = (y - x * 0.6) / 1.17;
+      const band = Math.sin(v0 / 11 + broad(u / 60, v0 / 30) * 4);
+      let v = 0.5 + band * 0.2 + (fine(u / 22, v0 / 3) - 0.5) * 0.5;
+      if (inTerrace(x, y)) v += 0.12; // raised meadows catch more light
+      c.set(x, y, dithered(GRASS_SHADES, Math.max(0, Math.min(1, v)), x, y));
+    }
+  }
+
+  // Terraces: zigzag ledge line along each raised meadow's edge
+  for (const [tc, tr, tw, th] of shapes.terraces) {
+    const x0 = tc * 16;
+    const y0 = tr * 16;
+    const x1 = (tc + tw) * 16 - 1;
+    const y1 = (tr + th) * 16 - 1;
+    const zig = (i: number): number => [0, 1, 2, 1][i % 4];
+    // A 2px dark zigzag with a light lip on its inner side, as on 5th-gen ledges
+    for (let x = x0; x <= x1; x++) {
+      for (const [y, dir] of [
+        [y0 + zig(x), 1],
+        [y1 - zig(x), -1],
+      ]) {
+        c.set(x, y, TERRACE_LINE);
+        c.set(x, y + dir, TERRACE_LINE);
+        c.set(x, y + 2 * dir, TERRACE_LIGHT);
+      }
+      c.set(x, y1 + 1, GRASS_SHADOW);
+    }
+    for (let y = y0; y <= y1; y++) {
+      for (const [x, dir] of [
+        [x0 + zig(y), 1],
+        [x1 - zig(y), -1],
+      ]) {
+        c.set(x, y, TERRACE_LINE);
+        c.set(x + dir, y, TERRACE_LINE);
+        c.set(x + 2 * dir, y, TERRACE_LIGHT);
+      }
+    }
+  }
+
+  // Path: sandy fill, light rim, grey edge and a soft grass shadow around it
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const d = shapes.pathDepth(x, y);
+      if (d < -3) continue;
+      if (d < -1) c.set(x, y, GRASS_SHADOW);
+      else if (d < 0) c.set(x, y, PATH_EDGE);
+      else if (d < 1) c.set(x, y, PATH_RIM);
+      else {
+        const v = 0.55 + (fine(x / 5, y / 3) - 0.5) * 0.7 + Math.min(d, 6) * 0.02;
+        c.set(x, y, dithered(SAND_SHADES, Math.max(0, Math.min(1, v)), x, y));
+      }
+    }
+  }
+
+  // Tall grass: dense staggered leaf scales, clipped to each patch
+  for (const [tc, tr, tw, th] of shapes.tallGrass) {
+    const x0 = tc * 16;
+    const y0 = tr * 16;
+    const patch = new Canvas(w, h);
+    patch.rect(x0, y0, tw * 16, th * 16, HEDGE[0]);
+    // Clumps in staggered rows; each later row overlaps the one above it
+    for (let y = y0 + 3, row = 0; y < y0 + th * 16 + 3; y += 5, row++) {
+      for (let x = x0 + (row % 2 ? 7 : 3); x < x0 + tw * 16 + 3; x += 8) {
+        // Slight jitter keeps the patch from reading as a regular weave
+        grassClump(patch, x + jitter(x * 3 + y, 11), y + jitter(x + y * 5, 13));
+      }
+    }
+    for (let y = y0; y < y0 + th * 16; y++) {
+      for (let x = x0; x < x0 + tw * 16; x++) {
+        const i = (y * w + x) * 4;
+        c.set(x, y, [patch.data[i], patch.data[i + 1], patch.data[i + 2], 255]);
+      }
+    }
+    // Bumpy top edge, and the patch's shadow below it
+    for (let x = x0; x < x0 + tw * 16; x++) {
+      const bump = [0, 1, 2, 2, 2, 1, 0, 0][(x - x0) % 8];
+      for (let k = 1; k <= bump; k++) c.set(x, y0 - k, k === bump ? HEDGE[3] : HEDGE[2]);
+      c.set(x, y0 + th * 16, HEDGE[1]);
+      c.set(x, y0 + th * 16 + 1, GRASS_SHADOW);
+    }
+  }
+
+  // Grass tufts and white flower pairs on open grass
+  const r = rng(77);
+  const open = (x: number, y: number): boolean =>
+    shapes.pathDepth(x, y) < -4 &&
+    !shapes.tallGrass.some(
+      ([tc, tr, tw, th]) =>
+        x >= tc * 16 - 4 && x < (tc + tw) * 16 + 4 && y >= tr * 16 - 4 && y < (tr + th) * 16 + 6,
+    );
+  for (let placed = 0, tries = 0; placed < 26 && tries < 2000; tries++) {
+    const x = 36 + Math.floor(r() * (w - 72));
+    const y = 36 + Math.floor(r() * (h - 72));
+    if (!open(x, y)) continue;
+    for (const [dx, dy, color] of [
+      [0, 0, '#70b868'],
+      [1, -1, '#70b868'],
+      [2, 0, '#70b868'],
+      [3, -1, '#70b868'],
+      [4, 0, '#70b868'],
+      [1, -2, '#c0f0a8'],
+      [3, -2, '#c0f0a8'],
+    ] as const) {
+      c.set(x + dx, y + dy, hex(color));
+    }
+    placed++;
+  }
+  for (let placed = 0, tries = 0; placed < 14 && tries < 2000; tries++) {
+    const x = 40 + Math.floor(r() * (w - 80));
+    const y = 40 + Math.floor(r() * (h - 80));
+    if (!open(x, y) || !open(x + 8, y + 6)) continue;
+    flower(c, x, y);
+    flower(c, x + 6, y + 4);
+    placed++;
+  }
+  return c;
 }
 
 interface FurnitureSpec {
@@ -443,27 +649,54 @@ const furniture: FurnitureSpec[] = [
 // ── Default map: "Route 1" ──────────────────────────────────
 
 /** Bump to replace users' saved layouts with this map on their next load. */
-const ROUTE_LAYOUT_REVISION = 2;
+const ROUTE_LAYOUT_REVISION = 3;
+const ROUTE_BACKGROUND = 'route-1';
+const BACKGROUNDS_DIR = path.join(__dirname, '..', 'webview-ui', 'src', 'assets', 'maps');
 const COLS = 24;
 const ROWS = 18;
 const GRASS = 7;
 const PATH = 8;
 const TALL_GRASS = 9;
+/** Floor colors only show if the painted background is unavailable. */
 const FLOOR_COLORS: Record<number, { h: number; s: number; b: number; c: number }> = {
   [GRASS]: { h: 98, s: 48, b: 4, c: 0 },
   [PATH]: { h: 36, s: 42, b: 10, c: 0 },
   [TALL_GRASS]: { h: 110, s: 52, b: -4, c: 10 },
 };
 
+const ROUTE_SHAPES: RouteShapes = {
+  pathDepth(x, y) {
+    // Main path winding north-south through the middle of the map
+    const cx = 192 + 10 * Math.sin(y / 46) + 4 * Math.sin(y / 13);
+    const main = 15 + jitter(y, 1) * 0.8 - Math.abs(x + 0.5 - cx);
+    // Branch west to the clearing, ending in a rounded cap
+    let branch = -Infinity;
+    if (x <= cx) {
+      const cy = 140 + 5 * Math.sin(x / 22);
+      const capX = 60;
+      const across = 12 + jitter(x, 7) * 0.8 - Math.abs(y + 0.5 - cy);
+      branch = x >= capX ? across : 12 - Math.hypot(x - capX, y + 0.5 - cy);
+    }
+    return Math.max(main, branch);
+  },
+  tallGrass: [
+    [15, 3, 6, 4],
+    [3, 12, 5, 3],
+  ],
+  terraces: [[14, 11, 8, 5]],
+};
+
 function routeLayout(): Record<string, unknown> {
   const tiles = new Array<number>(COLS * ROWS).fill(GRASS);
-  const paint = (c0: number, r0: number, w: number, h: number, tile: number): void => {
-    for (let r = r0; r < r0 + h; r++) for (let c = c0; c < c0 + w; c++) tiles[r * COLS + c] = tile;
-  };
-  paint(11, 0, 2, ROWS, PATH); // main north-south path
-  paint(3, 8, 9, 2, PATH); // branch west to the clearing
-  paint(15, 3, 6, 5, TALL_GRASS);
-  paint(3, 12, 5, 3, TALL_GRASS);
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      if (ROUTE_SHAPES.pathDepth(c * 16 + 8, r * 16 + 8) > 0) tiles[r * COLS + c] = PATH;
+    }
+  }
+  for (const [c0, r0, w, h] of ROUTE_SHAPES.tallGrass) {
+    for (let r = r0; r < r0 + h; r++)
+      for (let c = c0; c < c0 + w; c++) tiles[r * COLS + c] = TALL_GRASS;
+  }
 
   const sizes = new Map(furniture.map((f) => [f.id, [f.footprintW, f.footprintH]]));
   const occupied = new Set<string>();
@@ -481,9 +714,8 @@ function routeLayout(): Record<string, unknown> {
     placed.push({ uid: `route-${type.toLowerCase()}-${placed.length}`, type, col, row });
     return true;
   };
-  const isPath = (c: number, r: number): boolean => tiles[r * COLS + c] === PATH;
 
-  // Tree border, leaving the path open at both ends
+  // Forest border, leaving the path open at both ends
   for (let c = 0; c < COLS; c += 2) {
     if (c === 10 || c === 12) continue;
     place('TREE', c, 0);
@@ -499,42 +731,32 @@ function routeLayout(): Record<string, unknown> {
     [4, 4],
     [6, 4],
     [8, 4],
-    [14, 11],
-    [16, 11],
-    [18, 11],
-    [15, 14],
-    [18, 14],
+    [15, 12],
+    [17, 12],
+    [19, 12],
+    [16, 14],
+    [19, 14],
   ]) {
     place('STUMP', c, r);
   }
-  place('ROUTE_SIGN', 13, 2);
-  for (let c = 14; c <= 21; c++) place('FENCE', c, 10);
+  place('ROUTE_SIGN', 14, 2);
   for (const [c, r] of [
-    [9, 5],
-    [3, 10],
-    [20, 15],
+    [9, 6],
+    [2, 10],
+    [20, 9],
     [2, 6],
   ]) {
     place('BUSH', c, r);
   }
-  place('ROCK', 8, 14);
+  place('ROCK', 9, 14);
   place('ROCK', 19, 2);
-
-  // Scatter flowers on free plain grass
-  const r = rng(2024);
-  let flowersLeft = 16;
-  for (let tries = 0; flowersLeft > 0 && tries < 500; tries++) {
-    const c = 2 + Math.floor(r() * (COLS - 4));
-    const row = 2 + Math.floor(r() * (ROWS - 4));
-    if (tiles[row * COLS + c] !== GRASS || isPath(c, row)) continue;
-    if (place('FLOWERS', c, row)) flowersLeft--;
-  }
 
   return {
     version: 1,
     cols: COLS,
     rows: ROWS,
     layoutRevision: ROUTE_LAYOUT_REVISION,
+    background: ROUTE_BACKGROUND,
     tiles,
     tileColors: tiles.map((t) => FLOOR_COLORS[t]),
     furniture: placed,
@@ -565,11 +787,12 @@ function main(): void {
     };
     fs.writeFileSync(path.join(dir, 'manifest.json'), JSON.stringify(manifest, null, 2) + '\n');
   }
+  paintRoute(COLS, ROWS, ROUTE_SHAPES).save(path.join(BACKGROUNDS_DIR, `${ROUTE_BACKGROUND}.png`));
   fs.writeFileSync(
     path.join(ASSETS_DIR, `default-layout-${ROUTE_LAYOUT_REVISION}.json`),
     JSON.stringify(routeLayout()) + '\n',
   );
-  console.log(`Wrote 3 floors, ${furniture.length} furniture items and the route layout`);
+  console.log(`Wrote 3 floors, ${furniture.length} furniture items and the route map`);
 }
 
 main();

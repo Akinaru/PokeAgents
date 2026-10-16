@@ -50,6 +50,7 @@ import type { PokemonEffectKind } from '../../pokemon/effects.js';
 import { pokemonEffect } from '../../pokemon/effects.js';
 import { getPokemonSprite } from '../../pokemon/sprites.js';
 import { getColorizedFloorSprite, hasFloorSprites, WALL_COLOR } from '../floorTiles.js';
+import { getMapBackground } from '../mapBackgrounds.js';
 import { mapOffset } from '../projection.js';
 import {
   getCarpetJunctionSprite,
@@ -953,6 +954,7 @@ export function renderFrame(
   showAreas?: boolean,
   activeAreaLabel?: string | null,
   pets?: Pet[],
+  background?: string,
 ): { offsetX: number; offsetY: number } {
   // Clear
   ctx.clearRect(0, 0, canvasWidth, canvasHeight);
@@ -965,8 +967,20 @@ export function renderFrame(
   // the DOM overlays so a label lands exactly on the sprite it belongs to.
   const { offsetX, offsetY } = mapOffset(canvasWidth, canvasHeight, cols, rows, zoom, panX, panY);
 
-  // Draw tiles (floor + wall base color)
-  renderTileGrid(ctx, tileMap, offsetX, offsetY, zoom, tileColors, layoutCols);
+  // Draw the painted background, or the tiles (floor + wall base color) without one
+  const backgroundImage = getMapBackground(background);
+  if (backgroundImage) {
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(
+      backgroundImage,
+      offsetX,
+      offsetY,
+      backgroundImage.naturalWidth * zoom,
+      backgroundImage.naturalHeight * zoom,
+    );
+  } else {
+    renderTileGrid(ctx, tileMap, offsetX, offsetY, zoom, tileColors, layoutCols);
+  }
 
   // Carpet layer (above floor, below seat indicators / furniture / characters)
   if (carpetTiles && carpetTiles.length > 0) {

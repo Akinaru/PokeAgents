@@ -163,6 +163,8 @@ export interface OfficeLayout {
   areas?: AreaDefinition[];
   /** Per-tile Area label, parallel to tiles array. null = no area assignment. */
   areaTiles?: Array<string | null>;
+  /** Painted background drawn instead of the floor tiles (see mapBackgrounds.ts). */
+  background?: string;
 }
 
 export interface Character {
